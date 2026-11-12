@@ -318,12 +318,33 @@
   </div>
 
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then((reg) => console.log('Service Worker registered! Scope:', reg.scope))
-          .catch((err) => console.log('Service Worker registration failed:', err));
-      });
+    // Purane Service Worker/cache ki wajah se stale portal code load na ho.
+    // Is portal ke liye pehle se registered workers unregister karke fresh page load karein.
+    async function clearOldPortalWorker() {
+      if (!('serviceWorker' in navigator)) return;
+
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        if (!registrations.length) return;
+
+        await Promise.all(registrations.map(reg => reg.unregister()));
+
+        if ('caches' in window) {
+          const cacheNames = await caches.keys();
+          await Promise.all(cacheNames.map(name => caches.delete(name)));
+        }
+
+        // Unregister ke baad ek fresh navigation karein; loop se bachne ke liye guard.
+        if (navigator.serviceWorker.controller &&
+            !sessionStorage.getItem('tah_sw_refresh_done')) {
+          sessionStorage.setItem('tah_sw_refresh_done', '1');
+          location.reload();
+          return;
+        }
+        sessionStorage.removeItem('tah_sw_refresh_done');
+      } catch (err) {
+        console.warn('Service Worker cleanup skipped:', err);
+      }
     }
 
     // Yahan sirf apne emails aur passwords update karein. 
@@ -333,8 +354,10 @@
       "muqaddas2@gmail.com": "muqaddas123"
     };
 
-    // AUTOMATIC HASH: Yeh code khud validStudents ki list ko read karke unique signature bana lega
-    const currentStudentsHash = btoa(JSON.stringify(validStudents));
+    // Auth version ko credentials ke hash ke saath rakhein.
+    // Is version ko update karne se tamam purane saved sessions invalidate ho jayenge.
+    const AUTH_VERSION = "TAH-AUTH-2026-11-12-1";
+    const currentStudentsHash = btoa(AUTH_VERSION + "|" + JSON.stringify(validStudents));
 
     const batch1Nodes = [
       {
@@ -417,7 +440,6 @@
     ];
 
     let currentUserEmail = localStorage.getItem("tah_logged_user") || "";
-    let savedHash = localStorage.getItem("tah_students_hash") || "";
     let activeModuleIndex = 0;
 
     const loginForm = document.getElementById('login-form');
@@ -437,20 +459,45 @@
     const fsToggleBtn = document.getElementById('fs-toggle-btn');
     const backToLecBtn = document.getElementById('back-to-lec-btn');
 
-    window.addEventListener('DOMContentLoaded', () => {
-      // Agar validStudents list mein zara sa bhi change hoga, hash match nahi karega 
-      // aur purana user automatically logout hokar login screen par aa jayega!
-      if (savedHash !== currentStudentsHash || (currentUserEmail && !validStudents[currentUserEmail])) {
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Stale Service Worker/cache cleanup complete hone ke baad hi login validate karein.
+      await clearOldPortalWorker();
+
+      const savedHash = localStorage.getItem("tah_students_hash") || "";
+      currentUserEmail = localStorage.getItem("tah_logged_user") || "";
+
+      // Credentials, auth version, ya saved session mismatch ho to purana login clear.
+      if (
+        savedHash !== currentStudentsHash ||
+        (currentUserEmail && !Object.prototype.hasOwnProperty.call(validStudents, currentUserEmail))
+      ) {
         localStorage.removeItem("tah_logged_user");
-        localStorage.setItem("tah_students_hash", currentStudentsHash);
         currentUserEmail = "";
       }
 
-      if (currentUserEmail && validStudents[currentUserEmail]) {
+      // Current credentials ka hash hamesha save/update rakhein.
+      localStorage.setItem("tah_students_hash", currentStudentsHash);
+
+      if (currentUserEmail && Object.prototype.hasOwnProperty.call(validStudents, currentUserEmail)) {
         document.getElementById('user-display').innerText = currentUserEmail;
         showScreen(coursesScreen);
         initSecurity();
       } else {
+        showScreen(loginScreen);
+      }
+    });
+
+    // Agar isi portal ka session kisi doosre tab se clear/update ho, is tab ko bhi logout karein.
+    window.addEventListener('storage', (event) => {
+      if (event.key === "tah_logged_user" && !event.newValue) {
+        currentUserEmail = "";
+        iframeContainer.innerHTML = "";
+        showScreen(loginScreen);
+      }
+      if (event.key === "tah_students_hash" && event.newValue !== currentStudentsHash) {
+        localStorage.removeItem("tah_logged_user");
+        currentUserEmail = "";
+        iframeContainer.innerHTML = "";
         showScreen(loginScreen);
       }
     });
@@ -485,7 +532,11 @@
 
     function logoutUser() {
       localStorage.removeItem("tah_logged_user");
-      location.reload();
+      currentUserEmail = "";
+      iframeContainer.innerHTML = "";
+      showScreen(loginScreen);
+      document.getElementById('email-input').value = "";
+      document.getElementById('password-input').value = "";
     }
 
     function openBatch1Chapters() {
