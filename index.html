@@ -318,7 +318,6 @@
   </div>
 
   <script>
-    // Service Worker Registration for PWA
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
@@ -327,10 +326,15 @@
       });
     }
 
+    // Yahan sirf apne emails aur passwords update karein. 
+    // Koi alag se version variable change nahi karna parega!
     const validStudents = {
       "arsalan1@gmail.com": "arsalan123",
       "muqaddas2@gmail.com": "muqaddas123"
     };
+
+    // AUTOMATIC HASH: Yeh code khud validStudents ki list ko read karke unique signature bana lega
+    const currentStudentsHash = btoa(JSON.stringify(validStudents));
 
     const batch1Nodes = [
       {
@@ -413,6 +417,7 @@
     ];
 
     let currentUserEmail = localStorage.getItem("tah_logged_user") || "";
+    let savedHash = localStorage.getItem("tah_students_hash") || "";
     let activeModuleIndex = 0;
 
     const loginForm = document.getElementById('login-form');
@@ -433,9 +438,11 @@
     const backToLecBtn = document.getElementById('back-to-lec-btn');
 
     window.addEventListener('DOMContentLoaded', () => {
-      // FIX: Check if saved user email is valid against current allowed students list
-      if (currentUserEmail && !validStudents[currentUserEmail]) {
+      // Agar validStudents list mein zara sa bhi change hoga, hash match nahi karega 
+      // aur purana user automatically logout hokar login screen par aa jayega!
+      if (savedHash !== currentStudentsHash || (currentUserEmail && !validStudents[currentUserEmail])) {
         localStorage.removeItem("tah_logged_user");
+        localStorage.setItem("tah_students_hash", currentStudentsHash);
         currentUserEmail = "";
       }
 
@@ -467,6 +474,7 @@
       if (validStudents[email] && validStudents[email] === password) {
         currentUserEmail = email;
         localStorage.setItem("tah_logged_user", email);
+        localStorage.setItem("tah_students_hash", currentStudentsHash);
         document.getElementById('user-display').innerText = email;
         showScreen(coursesScreen);
         initSecurity();
