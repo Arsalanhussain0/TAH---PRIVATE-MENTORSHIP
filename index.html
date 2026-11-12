@@ -29,7 +29,6 @@
       position: relative;
     }
 
-    /* INTERACTIVE NEON CURSOR BACKGROUND ANIMATION */
     #neon-canvas {
       position: fixed;
       top: 0;
@@ -50,7 +49,6 @@
 
     .hidden { display: none !important; }
 
-    /* Card & Panel Styling */
     .card {
       background: rgba(22, 25, 34, 0.85);
       backdrop-filter: blur(10px);
@@ -102,7 +100,6 @@
 
     .error { color: #f87171; margin-top: 15px; display: none; }
 
-    /* Dashboard & Scrollable Lists */
     .section-title {
       font-size: 20px;
       color: #4ade80;
@@ -187,11 +184,10 @@
     }
     .logout-btn:hover { background: #b91c1c; }
 
-    /* Video Player */
     .video-wrapper {
       position: relative;
       width: 100%;
-      padding-top: 56.25%; /* 16:9 Aspect Ratio */
+      padding-top: 56.25%;
       background: #000;
       border-radius: 10px;
       overflow: hidden;
@@ -200,7 +196,6 @@
       border: 1px solid rgba(59, 130, 246, 0.4);
     }
 
-    /* CSS Fullscreen Class */
     .video-wrapper.css-fullscreen {
       position: fixed !important;
       top: 0 !important;
@@ -235,7 +230,6 @@
       text-shadow: 1px 1px 6px rgba(0,0,0,0.9);
     }
 
-    /* Custom Fullscreen Toggle Button */
     .custom-fs-btn {
       position: absolute;
       bottom: 15px;
@@ -259,7 +253,6 @@
 </head>
 <body>
 
-  <!-- Background Neon Interactive Canvas Animation -->
   <canvas id="neon-canvas"></canvas>
 
   <!-- 1. LOGIN SCREEN -->
@@ -317,10 +310,8 @@
     <h3 id="current-playing-title" style="color: #4ade80; margin-bottom: 12px; font-size: 16px;"></h3>
 
     <div class="video-wrapper" id="video-wrapper-box">
-      <!-- Watermark stays inside wrapper -->
       <div id="watermark-overlay" class="watermark"></div>
       <div id="iframe-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
-      <!-- Custom Fullscreen Button -->
       <button class="custom-fs-btn" id="fs-toggle-btn" onclick="toggleCustomFullscreen()">⛶ Fullscreen</button>
     </div>
   </div>
@@ -335,78 +326,78 @@
       {
         title: "TAH NODE 1: (Liquidity & Inefficiency)",
         lectures: [
-          { title: "LEC 1: Introduction to TAH - The Mystery Syndicate", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" },
-          { title: "LEC 2: ICT Volume Imbalance", videoId: "YAHAN_VIDEO_ID_DALNA" }
+          { title: "LEC 1: Introduction to TAH - The Apex House", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" },
+          { title: "LEC 2: ICT Volume Imbalance", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" }
         ]
       },
       {
         title: "TAH NODE 2: (Dealing Range Theory)",
         lectures: [
-          { title: "LEC 1: Introduction to Dealing Ranges", videoId: "YAHAN_VIDEO_ID_DALNA" },
-          { title: "LEC 2: Premium & Discount Arrays", videoId: "YAHAN_VIDEO_ID_DALNA" }
+          { title: "LEC 1: Introduction to Dealing Ranges", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" },
+          { title: "LEC 2: Premium & Discount Arrays", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" }
         ]
       },
       {
         title: "TAH NODE 3: (FVG Types & Techniques)",
         lectures: [
-          { title: "LEC 1: Fair Value Gap Identification", videoId: "YAHAN_VIDEO_ID_DALNA" },
-          { title: "LEC 2: Advanced FVG Rebalancing Strategies", videoId: "YAHAN_VIDEO_ID_DALNA" }
+          { title: "LEC 1: Fair Value Gap Identification", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" },
+          { title: "LEC 2: Advanced FVG Rebalancing Strategies", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" }
         ]
       },
       {
         title: "TAH NODE 4: (ICT Block Theory & MSS)",
         lectures: [
-          { title: "LEC 1: Order Blocks & Breaker Blocks", videoId: "YAHAN_VIDEO_ID_DALNA" },
-          { title: "LEC 2: Market Structure Shift (MSS)", videoId: "YAHAN_VIDEO_ID_DALNA" }
+          { title: "LEC 1: Order Blocks & Breaker Blocks", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" },
+          { title: "LEC 2: Market Structure Shift (MSS)", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" }
         ]
       },
       {
         title: "TAH NODE 5: (ICT Bonus PD Arrays)",
         lectures: [
-          { title: "LEC 1: Mitigation Blocks & Rejection Blocks", videoId: "YAHAN_VIDEO_ID_DALNA" },
-          { title: "LEC 2: Liquidity Voids & Propulsion Blocks", videoId: "YAHAN_VIDEO_ID_DALNA" }
+          { title: "LEC 1: Mitigation Blocks & Rejection Blocks", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" },
+          { title: "LEC 2: Liquidity Voids & Propulsion Blocks", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" }
         ]
       },
       {
         title: "TAH NODE 6: (ICT Swing Theory)",
         lectures: [
-          { title: "LEC 1: Swing Highs & Swing Lows Setup", videoId: "YAHAN_VIDEO_ID_DALNA" },
-          { title: "LEC 2: Internal vs External Range Liquidity", videoId: "YAHAN_VIDEO_ID_DALNA" }
+          { title: "LEC 1: Swing Highs & Swing Lows Setup", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" },
+          { title: "LEC 2: Internal vs External Range Liquidity", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" }
         ]
       },
       {
         title: "TAH NODE 7: (Intraday Architecture)",
         lectures: [
-          { title: "LEC 1: Session Openings & Key Levels", videoId: "YAHAN_VIDEO_ID_DALNA" },
-          { title: "LEC 2: Intraday Price Delivery Framework", videoId: "YAHAN_VIDEO_ID_DALNA" }
+          { title: "LEC 1: Session Openings & Key Levels", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" },
+          { title: "LEC 2: Intraday Price Delivery Framework", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" }
         ]
       },
       {
         title: "TAH NODE 8: (ICT Time & Price Theory)",
         lectures: [
-          { title: "LEC 1: Timing Daily Market Cycles", videoId: "YAHAN_VIDEO_ID_DALNA" },
-          { title: "LEC 2: Killzones & Opening Ranges", videoId: "YAHAN_VIDEO_ID_DALNA" }
+          { title: "LEC 1: Timing Daily Market Cycles", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" },
+          { title: "LEC 2: Killzones & Opening Ranges", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" }
         ]
       },
       {
         title: "TAH NODE 9: (ICT Power of 3 - Classic Buy/Sell Day)",
         lectures: [
-          { title: "LEC 1: Accumulation, Manipulation & Distribution (AMD)", videoId: "YAHAN_VIDEO_ID_DALNA" },
-          { title: "LEC 2: Identifying Classic Buy & Sell Days", videoId: "YAHAN_VIDEO_ID_DALNA" }
+          { title: "LEC 1: Accumulation, Manipulation & Distribution (AMD)", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" },
+          { title: "LEC 2: Identifying Classic Buy & Sell Days", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" }
         ]
       },
       {
         title: "TAH NODE 10: (ICT Trading Models)",
         lectures: [
-          { title: "LEC 1: Core Algorithmic Model Walkthrough", videoId: "YAHAN_VIDEO_ID_DALNA" },
-          { title: "LEC 2: Execution Checklist & Rules", videoId: "YAHAN_VIDEO_ID_DALNA" }
+          { title: "LEC 1: Core Algorithmic Model Walkthrough", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" },
+          { title: "LEC 2: Execution Checklist & Rules", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" }
         ]
       },
       {
         title: "TAH NODE 11: (IMPERIUM X - Risk Management)",
         lectures: [
-          { title: "LEC 1: Capital Preservation & Lot Sizing", videoId: "YAHAN_VIDEO_ID_DALNA" },
-          { title: "LEC 2: Trader Psychology & Risk Discipline", videoId: "YAHAN_VIDEO_ID_DALNA" }
+          { title: "LEC 1: Capital Preservation & Lot Sizing", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" },
+          { title: "LEC 2: Trader Psychology & Risk Discipline", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" }
         ]
       }
     ];
@@ -554,7 +545,6 @@
       }, 2500);
     }
 
-    // NEON INTERACTIVE BACKGROUND ANIMATION SCRIPT
     const canvas = document.getElementById('neon-canvas');
     const ctx = canvas.getContext('2d');
     let width, height;
