@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#2563eb">
   <meta name="description" content="Official Student Access Portal for TAH Mentorship by Trader Arsalan Hussain">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TAH Portal">
+  <link rel="apple-touch-icon" href="/icon-192.png">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Trader Arsalan Hussain | Student Portal</title>
@@ -317,6 +318,15 @@
   </div>
 
   <script>
+    // Service Worker Registration for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((reg) => console.log('Service Worker registered! Scope:', reg.scope))
+          .catch((err) => console.log('Service Worker registration failed:', err));
+      });
+    }
+
     const validStudents = {
       "bgsameer420@gmail.com": "bgsameer",
       "arsalan125@gmail.com": "arsalan123"
