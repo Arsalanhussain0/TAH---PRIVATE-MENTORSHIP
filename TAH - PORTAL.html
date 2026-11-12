@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="description" content="Official Student Access Portal for TAH Mentorship by Trader Arsalan Hussain">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TAH Portal">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trader Arsalan Hussain | Student Portal</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #07080a;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* INTERACTIVE NEON CURSOR BACKGROUND ANIMATION */
+    #neon-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      padding: 20px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hidden { display: none !important; }
+
+    /* Card & Panel Styling */
+    .card {
+      background: rgba(22, 25, 34, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(41, 98, 255, 0.3);
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(41, 98, 255, 0.1);
+    }
+
+    .card h2 { margin-bottom: 10px; color: #3b82f6; text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+    .card p { color: #94a3b8; margin-bottom: 20px; }
+
+    form input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      border: 1px solid #1e293b;
+      background: #0c0d10;
+      color: #fff;
+      font-size: 15px;
+    }
+
+    form input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 6px;
+      border: none;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
+    }
+
+    .error { color: #f87171; margin-top: 15px; display: none; }
+
+    /* Dashboard & Scrollable Lists */
+    .section-title {
+      font-size: 20px;
+      color: #4ade80;
+      margin-bottom: 15px;
+      font-weight: bold;
+      text-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+    }
+
+    .scroll-box {
+      max-height: 420px;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+
+    .scroll-box::-webkit-scrollbar {
+      width: 6px;
+    }
+    .scroll-box::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+
+    .list-item {
+      background: rgba(22, 25, 34, 0.85);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(42, 46, 61, 0.7);
+      padding: 14px 18px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s ease;
+    }
+
+    .list-item:hover {
+      border-color: #3b82f6;
+      background: rgba(30, 34, 45, 0.95);
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .list-item h4 { font-size: 14px; color: #fff; font-weight: 500; }
+    .list-item span { color: #94a3b8; font-size: 13px; }
+
+    .play-icon {
+      color: #4ade80;
+      margin-right: 10px;
+      font-size: 14px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      background: rgba(22, 25, 34, 0.85);
+      backdrop-filter: blur(10px);
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid rgba(42, 46, 61, 0.7);
+    }
+
+    .back-btn {
+      background: #1e293b;
+      width: auto;
+      padding: 6px 14px;
+      font-size: 14px;
+      margin-bottom: 15px;
+      cursor: pointer;
+      box-shadow: none;
+    }
+    .back-btn:hover { background: #334155; }
+
+    .logout-btn {
+      background: #dc2626;
+      width: auto;
+      padding: 6px 12px;
+      font-size: 14px;
+      box-shadow: none;
+    }
+    .logout-btn:hover { background: #b91c1c; }
+
+    /* Video Player */
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%; /* 16:9 Aspect Ratio */
+      background: #000;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(59, 130, 246, 0.2);
+      margin-top: 10px;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+
+    /* CSS Fullscreen Class */
+    .video-wrapper.css-fullscreen {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      padding-top: 0 !important;
+      max-width: none !important;
+      z-index: 999999 !important;
+      border-radius: 0 !important;
+      border: none !important;
+    }
+
+    .video-wrapper iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .watermark {
+      position: absolute;
+      color: rgba(74, 222, 128, 0.85);
+      font-size: 18px;
+      font-weight: bold;
+      pointer-events: none;
+      z-index: 2147483647;
+      user-select: none;
+      transition: all 1.5s ease-in-out;
+      text-shadow: 1px 1px 6px rgba(0,0,0,0.9);
+    }
+
+    /* Custom Fullscreen Toggle Button */
+    .custom-fs-btn {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #4ade80;
+      border: 1px solid #4ade80;
+      padding: 6px 12px;
+      font-size: 13px;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 2147483648;
+      font-weight: bold;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .custom-fs-btn:hover {
+      background: #4ade80;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Neon Interactive Canvas Animation -->
+  <canvas id="neon-canvas"></canvas>
+
+  <!-- 1. LOGIN SCREEN -->
+  <div id="login-screen" class="container">
+    <div class="card">
+      <h2>Trader Arsalan Hussain Portal</h2>
+      <p>Enter your authorized student credentials</p>
+      <form id="login-form">
+        <input type="email" id="email-input" placeholder="Student Email" required>
+        <input type="password" id="password-input" placeholder="Access Password" required>
+        <button type="submit">Login</button>
+      </form>
+      <div id="error-msg" class="error">Invalid Credentials!</div>
+    </div>
+  </div>
+
+  <!-- 2. COURSES SCREEN -->
+  <div id="courses-screen" class="container hidden">
+    <div class="top-bar">
+      <div>
+        <h4 style="color:#4ade80;">Welcome</h4>
+        <p id="user-display" style="font-size:13px; color:#94a3b8;"></p>
+      </div>
+      <button class="logout-btn" onclick="logoutUser()">Logout</button>
+    </div>
+
+    <div class="section-title">My Courses</div>
+    
+    <div class="list-item" onclick="openBatch1Chapters()">
+      <div>
+        <h4>TAH Batch 1 lectures</h4>
+        <span style="color:#4ade80;">All 11 Nodes Available</span>
+      </div>
+      <span>➔</span>
+    </div>
+  </div>
+
+  <!-- 3. CHAPTERS SCREEN -->
+  <div id="chapters-screen" class="container hidden">
+    <button class="back-btn" onclick="showScreen(coursesScreen)">❮ Back to Courses</button>
+    <div class="section-title">TAH Batch 1 Modules</div>
+    <div id="modules-list-container" class="scroll-box"></div>
+  </div>
+
+  <!-- 4. LECTURES LIST SCREEN -->
+  <div id="lectures-list-screen" class="container hidden">
+    <button class="back-btn" onclick="showScreen(chaptersScreen)">❮ Back to Chapters</button>
+    <div id="module-title-heading" class="section-title"></div>
+    <div id="lectures-container" class="scroll-box"></div>
+  </div>
+
+  <!-- 5. VIDEO PLAYER SCREEN -->
+  <div id="video-player-screen" class="container hidden" style="max-width: 850px;">
+    <button class="back-btn" id="back-to-lec-btn" onclick="goBackFromVideo()">❮ Back to Lectures</button>
+    <h3 id="current-playing-title" style="color: #4ade80; margin-bottom: 12px; font-size: 16px;"></h3>
+
+    <div class="video-wrapper" id="video-wrapper-box">
+      <!-- Watermark stays inside wrapper -->
+      <div id="watermark-overlay" class="watermark"></div>
+      <div id="iframe-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
+      <!-- Custom Fullscreen Button -->
+      <button class="custom-fs-btn" id="fs-toggle-btn" onclick="toggleCustomFullscreen()">⛶ Fullscreen</button>
+    </div>
+  </div>
+
+  <script>
+    const validStudents = {
+      "bgsameer420@gmail.com": "bgsameer",
+      "arsalan125@gmail.com": "arsalan123"
+    };
+
+    const batch1Nodes = [
+      {
+        title: "TAH NODE 1: (Liquidity & Inefficiency)",
+        lectures: [
+          { title: "LEC 1: Introduction to TAH - The Mystery Syndicate", videoId: "dff20229-1e6e-44fc-a3eb-8d8113a3da7e" },
+          { title: "LEC 2: ICT Volume Imbalance", videoId: "YAHAN_VIDEO_ID_DALNA" }
+        ]
+      },
+      {
+        title: "TAH NODE 2: (Dealing Range Theory)",
+        lectures: [
+          { title: "LEC 1: Introduction to Dealing Ranges", videoId: "YAHAN_VIDEO_ID_DALNA" },
+          { title: "LEC 2: Premium & Discount Arrays", videoId: "YAHAN_VIDEO_ID_DALNA" }
+        ]
+      },
+      {
+        title: "TAH NODE 3: (FVG Types & Techniques)",
+        lectures: [
+          { title: "LEC 1: Fair Value Gap Identification", videoId: "YAHAN_VIDEO_ID_DALNA" },
+          { title: "LEC 2: Advanced FVG Rebalancing Strategies", videoId: "YAHAN_VIDEO_ID_DALNA" }
+        ]
+      },
+      {
+        title: "TAH NODE 4: (ICT Block Theory & MSS)",
+        lectures: [
+          { title: "LEC 1: Order Blocks & Breaker Blocks", videoId: "YAHAN_VIDEO_ID_DALNA" },
+          { title: "LEC 2: Market Structure Shift (MSS)", videoId: "YAHAN_VIDEO_ID_DALNA" }
+        ]
+      },
+      {
+        title: "TAH NODE 5: (ICT Bonus PD Arrays)",
+        lectures: [
+          { title: "LEC 1: Mitigation Blocks & Rejection Blocks", videoId: "YAHAN_VIDEO_ID_DALNA" },
+          { title: "LEC 2: Liquidity Voids & Propulsion Blocks", videoId: "YAHAN_VIDEO_ID_DALNA" }
+        ]
+      },
+      {
+        title: "TAH NODE 6: (ICT Swing Theory)",
+        lectures: [
+          { title: "LEC 1: Swing Highs & Swing Lows Setup", videoId: "YAHAN_VIDEO_ID_DALNA" },
+          { title: "LEC 2: Internal vs External Range Liquidity", videoId: "YAHAN_VIDEO_ID_DALNA" }
+        ]
+      },
+      {
+        title: "TAH NODE 7: (Intraday Architecture)",
+        lectures: [
+          { title: "LEC 1: Session Openings & Key Levels", videoId: "YAHAN_VIDEO_ID_DALNA" },
+          { title: "LEC 2: Intraday Price Delivery Framework", videoId: "YAHAN_VIDEO_ID_DALNA" }
+        ]
+      },
+      {
+        title: "TAH NODE 8: (ICT Time & Price Theory)",
+        lectures: [
+          { title: "LEC 1: Timing Daily Market Cycles", videoId: "YAHAN_VIDEO_ID_DALNA" },
+          { title: "LEC 2: Killzones & Opening Ranges", videoId: "YAHAN_VIDEO_ID_DALNA" }
+        ]
+      },
+      {
+        title: "TAH NODE 9: (ICT Power of 3 - Classic Buy/Sell Day)",
+        lectures: [
+          { title: "LEC 1: Accumulation, Manipulation & Distribution (AMD)", videoId: "YAHAN_VIDEO_ID_DALNA" },
+          { title: "LEC 2: Identifying Classic Buy & Sell Days", videoId: "YAHAN_VIDEO_ID_DALNA" }
+        ]
+      },
+      {
+        title: "TAH NODE 10: (ICT Trading Models)",
+        lectures: [
+          { title: "LEC 1: Core Algorithmic Model Walkthrough", videoId: "YAHAN_VIDEO_ID_DALNA" },
+          { title: "LEC 2: Execution Checklist & Rules", videoId: "YAHAN_VIDEO_ID_DALNA" }
+        ]
+      },
+      {
+        title: "TAH NODE 11: (IMPERIUM X - Risk Management)",
+        lectures: [
+          { title: "LEC 1: Capital Preservation & Lot Sizing", videoId: "YAHAN_VIDEO_ID_DALNA" },
+          { title: "LEC 2: Trader Psychology & Risk Discipline", videoId: "YAHAN_VIDEO_ID_DALNA" }
+        ]
+      }
+    ];
+
+    let currentUserEmail = localStorage.getItem("tah_logged_user") || "";
+    let activeModuleIndex = 0;
+
+    const loginForm = document.getElementById('login-form');
+    const loginScreen = document.getElementById('login-screen');
+    const coursesScreen = document.getElementById('courses-screen');
+    const chaptersScreen = document.getElementById('chapters-screen');
+    const lecturesListScreen = document.getElementById('lectures-list-screen');
+    const videoPlayerScreen = document.getElementById('video-player-screen');
+    
+    const modulesListContainer = document.getElementById('modules-list-container');
+    const lecturesContainer = document.getElementById('lectures-container');
+    const moduleTitleHeading = document.getElementById('module-title-heading');
+    const currentPlayingTitle = document.getElementById('current-playing-title');
+    const iframeContainer = document.getElementById('iframe-container');
+    const watermarkOverlay = document.getElementById('watermark-overlay');
+    const videoWrapperBox = document.getElementById('video-wrapper-box');
+    const fsToggleBtn = document.getElementById('fs-toggle-btn');
+    const backToLecBtn = document.getElementById('back-to-lec-btn');
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (currentUserEmail && validStudents[currentUserEmail]) {
+        document.getElementById('user-display').innerText = currentUserEmail;
+        showScreen(coursesScreen);
+        initSecurity();
+      } else {
+        showScreen(loginScreen);
+      }
+    });
+
+    function showScreen(screenToShow) {
+      if (videoWrapperBox.classList.contains('css-fullscreen')) {
+        toggleCustomFullscreen();
+      }
+      [loginScreen, coursesScreen, chaptersScreen, lecturesListScreen, videoPlayerScreen].forEach(s => s.classList.add('hidden'));
+      screenToShow.classList.remove('hidden');
+      if (screenToShow !== videoPlayerScreen) {
+        iframeContainer.innerHTML = "";
+      }
+    }
+
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email-input').value;
+      const password = document.getElementById('password-input').value;
+
+      if (validStudents[email] && validStudents[email] === password) {
+        currentUserEmail = email;
+        localStorage.setItem("tah_logged_user", email);
+        document.getElementById('user-display').innerText = email;
+        showScreen(coursesScreen);
+        initSecurity();
+      } else {
+        document.getElementById('error-msg').style.display = 'block';
+      }
+    });
+
+    function logoutUser() {
+      localStorage.removeItem("tah_logged_user");
+      location.reload();
+    }
+
+    function openBatch1Chapters() {
+      modulesListContainer.innerHTML = "";
+      batch1Nodes.forEach((node, index) => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.onclick = () => openLecturesList(index);
+        item.innerHTML = `
+          <h4>${node.title}</h4>
+          <span style="color:#3b82f6;">${node.lectures.length} Videos</span>
+        `;
+        modulesListContainer.appendChild(item);
+      });
+      showScreen(chaptersScreen);
+    }
+
+    function openLecturesList(nodeIndex) {
+      activeModuleIndex = nodeIndex;
+      const selectedNode = batch1Nodes[nodeIndex];
+      moduleTitleHeading.innerText = selectedNode.title;
+      lecturesContainer.innerHTML = "";
+
+      selectedNode.lectures.forEach((lec) => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.onclick = () => playSelectedVideo(lec.title, lec.videoId);
+        item.innerHTML = `
+          <div style="display:flex; align-items:center;">
+            <span class="play-icon">▶</span>
+            <h4>${lec.title}</h4>
+          </div>
+          <span>Watch</span>
+        `;
+        lecturesContainer.appendChild(item);
+      });
+
+      showScreen(lecturesListScreen);
+    }
+
+    function playSelectedVideo(title, vidId) {
+      currentPlayingTitle.innerText = title;
+      iframeContainer.innerHTML = `<iframe src="https://iframe.mediadelivery.net/embed/803385/${vidId}?autoplay=true&loop=false&muted=false&preload=true" referrerpolicy="no-referrer-when-downgrade" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="false"></iframe>`;
+      showScreen(videoPlayerScreen);
+      initWatermark(currentUserEmail);
+    }
+
+    function goBackFromVideo() {
+      if (videoWrapperBox.classList.contains('css-fullscreen')) {
+        toggleCustomFullscreen();
+      }
+      iframeContainer.innerHTML = "";
+      showScreen(lecturesListScreen);
+    }
+
+    function toggleCustomFullscreen() {
+      if (!videoWrapperBox.classList.contains('css-fullscreen')) {
+        videoWrapperBox.classList.add('css-fullscreen');
+        fsToggleBtn.innerText = "✕ Exit Fullscreen";
+        backToLecBtn.style.display = "none";
+        currentPlayingTitle.style.display = "none";
+      } else {
+        videoWrapperBox.classList.remove('css-fullscreen');
+        fsToggleBtn.innerText = "⛶ Fullscreen";
+        backToLecBtn.style.display = "block";
+        currentPlayingTitle.style.display = "block";
+      }
+    }
+
+    function initWatermark(email) {
+      watermarkOverlay.innerText = email;
+      const moveInterval = setInterval(() => {
+        if (videoPlayerScreen.classList.contains('hidden')) {
+          clearInterval(moveInterval);
+          return;
+        }
+        const top = Math.floor(Math.random() * 80) + 10;
+        const left = Math.floor(Math.random() * 70) + 10;
+        watermarkOverlay.style.top = top + '%';
+        watermarkOverlay.style.left = left + '%';
+      }, 2500);
+    }
+
+    // NEON INTERACTIVE BACKGROUND ANIMATION SCRIPT
+    const canvas = document.getElementById('neon-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let mouse = { x: null, y: null, radius: 150 };
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    window.addEventListener('mousemove', (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+
+    window.addEventListener('click', (e) => {
+      createRipple(e.clientX, e.clientY);
+    });
+
+    let ripples = [];
+    function createRipple(x, y) {
+      ripples.push({ x: x, y: y, radius: 10, alpha: 1 });
+    }
+
+    let particles = [];
+    for (let i = 0; i < 40; i++) {
+      particles.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: (Math.random() - 0.5) * 0.8,
+        size: Math.random() * 2 + 1
+      });
+    }
+
+    function animateNeon() {
+      ctx.clearRect(0, 0, width, height);
+
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (mouse.x !== null && mouse.y !== null) {
+          let dx = p.x - mouse.x;
+          let dy = p.y - mouse.y;
+          let dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 150) {
+            ctx.strokeStyle = `rgba(37, 99, 235, ${1 - dist/150})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(mouse.x, mouse.y);
+            ctx.stroke();
+          }
+        }
+      });
+
+      if (mouse.x !== null && mouse.y !== null) {
+        let gradient = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 180);
+        gradient.addColorStop(0, 'rgba(37, 99, 235, 0.15)');
+        gradient.addColorStop(1, 'rgba(7, 8, 10, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      ripples.forEach((r, index) => {
+        r.radius += 4;
+        r.alpha -= 0.03;
+        r.alpha <= 0 && ripples.splice(index, 1);
+        ctx.strokeStyle = `rgba(59, 130, 246, ${r.alpha})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+
+      requestAnimationFrame(animateNeon);
+    }
+    animateNeon();
+
+    function initSecurity() {
+      document.addEventListener('contextmenu', e => e.preventDefault());
+      document.addEventListener('keydown', e => {
+        if (
+          e.key === 'F12' ||
+          (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+          (e.ctrlKey && e.shiftKey && e.key === 'J') ||
+          (e.ctrlKey && e.key === 'u')
+        ) {
+          e.preventDefault();
+        }
+      });
+    }
+  </script>
+</body>
+</html>
