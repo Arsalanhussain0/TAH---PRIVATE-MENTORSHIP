@@ -318,46 +318,35 @@
   </div>
 
   <script>
-    // Purane Service Worker/cache ki wajah se stale portal code load na ho.
-    // Is portal ke liye pehle se registered workers unregister karke fresh page load karein.
-    async function clearOldPortalWorker() {
-      if (!('serviceWorker' in navigator)) return;
-
-      try {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        if (!registrations.length) return;
-
-        await Promise.all(registrations.map(reg => reg.unregister()));
-
-        if ('caches' in window) {
-          const cacheNames = await caches.keys();
-          await Promise.all(cacheNames.map(name => caches.delete(name)));
+    // Register the updated Service Worker normally.
+    // updateViaCache:'none' asks the browser to revalidate sw.js instead of
+    // relying on a stale cached worker script.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', async () => {
+        try {
+          const registration = await navigator.serviceWorker.register('./sw.js', {
+            updateViaCache: 'none'
+          });
+          await registration.update();
+          console.log('TAH Service Worker ready:', registration.scope);
+        } catch (error) {
+          console.error('TAH Service Worker registration failed:', error);
         }
-
-        // Unregister ke baad ek fresh navigation karein; loop se bachne ke liye guard.
-        if (navigator.serviceWorker.controller &&
-            !sessionStorage.getItem('tah_sw_refresh_done')) {
-          sessionStorage.setItem('tah_sw_refresh_done', '1');
-          location.reload();
-          return;
-        }
-        sessionStorage.removeItem('tah_sw_refresh_done');
-      } catch (err) {
-        console.warn('Service Worker cleanup skipped:', err);
-      }
+      });
     }
 
-    // Yahan sirf apne emails aur passwords update karein. 
-    // Koi alag se version variable change nahi karna parega!
+    // Student credentials: update this list when adding/removing students.
     const validStudents = {
       "arsalan1@gmail.com": "arsalan123",
       "muqaddas2@gmail.com": "muqaddas123"
     };
 
-    // Auth version ko credentials ke hash ke saath rakhein.
-    // Is version ko update karne se tamam purane saved sessions invalidate ho jayenge.
-    const AUTH_VERSION = "TAH-AUTH-2026-11-12-1";
-    const currentStudentsHash = btoa(AUTH_VERSION + "|" + JSON.stringify(validStudents));
+    // Change AUTH_VERSION to force every existing student to log in again.
+    // A credential-list/password change also invalidates old sessions automatically.
+    const AUTH_VERSION = "TAH-AUTH-2026-11-12-2";
+    const currentStudentsHash = btoa(
+      AUTH_VERSION + "|" + JSON.stringify(validStudents)
+    );
 
     const batch1Nodes = [
       {
@@ -439,7 +428,7 @@
       }
     ];
 
-    let currentUserEmail = localStorage.getItem("tah_logged_user") || "";
+    let currentUserEmail = "";
     let activeModuleIndex = 0;
 
     const loginForm = document.getElementById('login-form');
@@ -459,26 +448,34 @@
     const fsToggleBtn = document.getElementById('fs-toggle-btn');
     const backToLecBtn = document.getElementById('back-to-lec-btn');
 
-    window.addEventListener('DOMContentLoaded', async () => {
-      // Stale Service Worker/cache cleanup complete hone ke baad hi login validate karein.
-      await clearOldPortalWorker();
+    function clearSavedLogin() {
+      localStorage.removeItem("tah_logged_user");
+      currentUserEmail = "";
+    }
 
+    window.addEventListener('DOMContentLoaded', () => {
       const savedHash = localStorage.getItem("tah_students_hash") || "";
-      currentUserEmail = localStorage.getItem("tah_logged_user") || "";
+      const savedEmail = (localStorage.getItem("tah_logged_user") || "").trim().toLowerCase();
 
-      // Credentials, auth version, ya saved session mismatch ho to purana login clear.
-      if (
-        savedHash !== currentStudentsHash ||
-        (currentUserEmail && !Object.prototype.hasOwnProperty.call(validStudents, currentUserEmail))
+      // If the student list/passwords or AUTH_VERSION changed, log out old sessions.
+      if (savedHash !== currentStudentsHash) {
+        clearSavedLogin();
+      } else if (
+        savedEmail &&
+        !Object.prototype.hasOwnProperty.call(validStudents, savedEmail)
       ) {
-        localStorage.removeItem("tah_logged_user");
-        currentUserEmail = "";
+        clearSavedLogin();
+      } else {
+        currentUserEmail = savedEmail;
       }
 
-      // Current credentials ka hash hamesha save/update rakhein.
+      // Save the current authentication signature for the next visit.
       localStorage.setItem("tah_students_hash", currentStudentsHash);
 
-      if (currentUserEmail && Object.prototype.hasOwnProperty.call(validStudents, currentUserEmail)) {
+      if (
+        currentUserEmail &&
+        Object.prototype.hasOwnProperty.call(validStudents, currentUserEmail)
+      ) {
         document.getElementById('user-display').innerText = currentUserEmail;
         showScreen(coursesScreen);
         initSecurity();
@@ -487,16 +484,16 @@
       }
     });
 
-    // Agar isi portal ka session kisi doosre tab se clear/update ho, is tab ko bhi logout karein.
+    // Keep other open tabs in sync when a login is cleared or credentials change.
     window.addEventListener('storage', (event) => {
       if (event.key === "tah_logged_user" && !event.newValue) {
         currentUserEmail = "";
         iframeContainer.innerHTML = "";
         showScreen(loginScreen);
       }
+
       if (event.key === "tah_students_hash" && event.newValue !== currentStudentsHash) {
-        localStorage.removeItem("tah_logged_user");
-        currentUserEmail = "";
+        clearSavedLogin();
         iframeContainer.innerHTML = "";
         showScreen(loginScreen);
       }
@@ -515,28 +512,36 @@
 
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const email = document.getElementById('email-input').value;
-      const password = document.getElementById('password-input').value;
 
-      if (validStudents[email] && validStudents[email] === password) {
+      const email = document.getElementById('email-input').value.trim().toLowerCase();
+      const password = document.getElementById('password-input').value;
+      const errorMessage = document.getElementById('error-msg');
+
+      if (
+        Object.prototype.hasOwnProperty.call(validStudents, email) &&
+        validStudents[email] === password
+      ) {
         currentUserEmail = email;
         localStorage.setItem("tah_logged_user", email);
         localStorage.setItem("tah_students_hash", currentStudentsHash);
+
+        errorMessage.style.display = 'none';
         document.getElementById('user-display').innerText = email;
         showScreen(coursesScreen);
         initSecurity();
       } else {
-        document.getElementById('error-msg').style.display = 'block';
+        clearSavedLogin();
+        errorMessage.style.display = 'block';
       }
     });
 
     function logoutUser() {
-      localStorage.removeItem("tah_logged_user");
-      currentUserEmail = "";
+      clearSavedLogin();
       iframeContainer.innerHTML = "";
       showScreen(loginScreen);
       document.getElementById('email-input').value = "";
       document.getElementById('password-input').value = "";
+      document.getElementById('error-msg').style.display = 'none';
     }
 
     function openBatch1Chapters() {
