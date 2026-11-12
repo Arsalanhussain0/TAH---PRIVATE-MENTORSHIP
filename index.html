@@ -433,6 +433,12 @@
     const backToLecBtn = document.getElementById('back-to-lec-btn');
 
     window.addEventListener('DOMContentLoaded', () => {
+      // FIX: Check if saved user email is valid against current allowed students list
+      if (currentUserEmail && !validStudents[currentUserEmail]) {
+        localStorage.removeItem("tah_logged_user");
+        currentUserEmail = "";
+      }
+
       if (currentUserEmail && validStudents[currentUserEmail]) {
         document.getElementById('user-display').innerText = currentUserEmail;
         showScreen(coursesScreen);
