@@ -1,3 +1,4 @@
+const {enforceRateLimit}=require("../lib/rate-limit");
 // Admin-only VdoCipher video mapping. IDs never enter the public course catalog.
 const admin=require("firebase-admin");
 if(!admin.apps.length&&process.env.FIREBASE_SERVICE_ACCOUNT_JSON){
@@ -14,6 +15,7 @@ module.exports=async(req,res)=>{
  try{user=await admin.auth().verifyIdToken(header.slice(7),true)}
  catch{return send(res,401,{error:"invalid_session"})}
  const db=admin.firestore();
+ if(!await enforceRateLimit(db,user.uid,req.method==="GET"?"admin_videos_get":"admin_videos_post",res))return;
  try{
   const a=await db.doc("admins/"+user.uid).get();
   if(!a.exists||a.data().active!==true)return send(res,403,{error:"admin_required"});
