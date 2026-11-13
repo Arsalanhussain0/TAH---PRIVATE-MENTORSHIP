@@ -1,3 +1,4 @@
+const {enforceRateLimit}=require("../lib/rate-limit");
 // Admin-only permanent student deletion. Requires FIREBASE_SERVICE_ACCOUNT_JSON.
 const admin=require("firebase-admin");
 if(!admin.apps.length&&process.env.FIREBASE_SERVICE_ACCOUNT_JSON){
@@ -19,6 +20,7 @@ module.exports=async(req,res)=>{
  if(uid===caller.uid)return send(res,403,{error:"cannot_delete_self"});
  try{
   const db=admin.firestore();
+  if(!await enforceRateLimit(db,caller.uid,"delete_student",res))return;
   const adminSnap=await db.doc("admins/"+caller.uid).get();
   if(!adminSnap.exists||adminSnap.data().active!==true)return send(res,403,{error:"admin_required"});
   // Never delete admin accounts through the student management interface.
