@@ -29,6 +29,7 @@ module.exports=async function handler(req,res){
     ]);
     const student=studentSnap.data();
     if(!studentSnap.exists||student?.active!==true||student?.role!=="student")return respond(res,403,{error:"student_not_approved"});
+    if(student.mustChangePassword===true)return respond(res,403,{error:"password_change_required"});
     const hash=crypto.createHash("sha256").update(deviceSecret).digest("hex");
     if(!student.deviceBinding||student.deviceBinding!==hash)return respond(res,403,{error:"device_not_authorized"});
     const lecture=catalogSnap.data()?.modules?.[moduleIndex]?.lectures?.[lectureIndex];
