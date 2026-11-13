@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="/admin-manifest.json">
+<meta name="theme-color" content="#2563eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="TAH Admin">
+<link rel="apple-touch-icon" href="/icon-192.png"><title>TAH | Admin Dashboard</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#070a12;color:#eaf2ff;font:15px system-ui,Segoe UI,sans-serif}main{max-width:1080px;margin:auto;padding:28px 18px}h1{margin:0;color:#60a5fa;font-size:27px}h2{font-size:19px;margin-top:0}.muted{color:#94a3b8}.panel{background:#111827;border:1px solid #274270;border-radius:16px;padding:22px;margin-top:22px;box-shadow:0 12px 40px #0006}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.spread{justify-content:space-between}input,select{background:#080e1c;color:white;border:1px solid #334155;padding:12px;border-radius:9px;max-width:100%}input{flex:1;min-width:190px}button{border:0;background:#2563eb;color:white;border-radius:9px;padding:11px 15px;cursor:pointer;font-weight:650}button:hover{background:#1d4ed8}button:disabled{opacity:.55;cursor:wait}.danger{background:#991b1b}.success{background:#166534}.secondary{background:#334155}.hidden{display:none!important}.msg{margin-top:12px;color:#fbbf24;white-space:pre-wrap}.student{padding:17px 0;border-bottom:1px solid #334155}.student:last-child{border:0}.pill{border-radius:20px;padding:5px 9px;font-size:12px}.on{background:#14532d;color:#bbf7d0}.off{background:#7f1d1d;color:#fecaca}.small{font-size:12px;word-break:break-all}.stats{display:flex;gap:20px;margin-top:18px}.stats strong{font-size:22px;color:#93c5fd}
+
+/* TAH luxury admin navigation */
+body{background:radial-gradient(ellipse at 80% -10%,#102958 0%,transparent 48%),#050811;color:#eaf2ff}
+main{max-width:1180px;padding:30px 22px 60px}
+header{padding:14px 0 20px;border-bottom:1px solid #1e3a65}
+h1{font-size:clamp(25px,3vw,36px);letter-spacing:.3px;background:linear-gradient(90deg,#dbeafe,#60a5fa,#2563eb);-webkit-background-clip:text;background-clip:text;color:transparent}
+.panel{background:linear-gradient(145deg,#101b30,#0b1221);border-color:#263e67;box-shadow:0 14px 40px #0004}
+button{transition:background .15s,transform .15s}button:active{transform:scale(.98)}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
+.admin-tabs{display:flex;gap:10px;margin:24px 0 6px;padding:7px;background:#0d1627;border:1px solid #253b60;border-radius:14px;max-width:720px}
+.admin-tab{flex:1;background:transparent;color:#9fb7d8;border:1px solid transparent;font-size:14px}
+.admin-tab[aria-selected="true"]{background:linear-gradient(110deg,#1d4ed8,#2563eb);color:#fff;box-shadow:0 5px 20px #2563eb45}
+.admin-view[hidden]{display:none!important}
+.admin-view>.panel:first-child{margin-top:18px}
+.student{padding:20px 0}
+.course-tools{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.course-tools input{max-width:300px}
+@media(max-width:650px){main{padding:18px 12px 40px}.panel{padding:17px}.admin-tabs{max-width:none}.row{gap:8px}.admin-tab{padding:12px 6px;font-size:13px}}
+</style></head><body><main>
+<header class="row spread"><div><h1>TAH — The Apex House</h1><p class="muted">Private Mentorship · Admin Dashboard</p></div><button id="logout" class="secondary hidden">Logout</button></header>
+<section id="loginPanel" class="panel"><h2>Admin Sign In</h2><p class="muted">Use your Firebase admin email and password.</p><form id="loginForm" class="row"><input id="email" type="email" placeholder="Admin email" autocomplete="username" required><input id="password" type="password" placeholder="Password" autocomplete="current-password" required><button id="loginBtn">Sign In</button></form><p id="loginMsg" class="msg" role="status"></p></section>
+<nav id="adminNav" class="admin-tabs hidden" aria-label="Admin sections" role="tablist">
+<button type="button" class="admin-tab" id="studentsTab" role="tab" aria-selected="true" aria-controls="dashboard">👥 Students</button>
+<button type="button" class="admin-tab" id="coursesTab" role="tab" aria-selected="false" aria-controls="coursesPanel">📚 Courses</button><button type="button" class="admin-tab" id="videosTab" role="tab" aria-selected="false" aria-controls="videosPanel">🎬 Videos</button>
+</nav><section id="dashboard" class="admin-view hidden" role="tabpanel" aria-labelledby="studentsTab"><div class="panel"><div class="row spread"><h2>Student Management</h2><span id="identity" class="muted small"></span></div><p class="muted">Create student accounts directly below. The server securely creates Firebase Authentication and student access together.</p><div class="stats"><div><strong id="total">0</strong><p class="muted">Students</p></div><div><strong id="active">0</strong><p class="muted">Active</p></div></div></div>
+<div class="panel"><h2>➕ Create New Student</h2><p class="muted">Create a Firebase login and approve mentorship access in one step. A secure temporary password will be shown once; share it privately and ask the student to reset it.</p><form id="createStudentForm"><div class="row"><input id="newStudentName" placeholder="Student full name" autocomplete="off" required minlength="2" maxlength="100"><input id="newStudentEmail" type="email" placeholder="Student email" autocomplete="off" required maxlength="254"></div><div class="row" style="margin-top:12px"><button id="createStudentBtn" type="submit">Create Student & Grant Access</button></div></form><p id="createStudentMsg" class="msg" role="status"></p><div id="createdStudentDetails" class="hidden" style="margin-top:14px;padding:16px;border:1px solid #2563eb;border-radius:12px;background:#0a1830"><strong>Account created — save these details now</strong><p class="muted small">The temporary password is displayed only once and will disappear when you leave this page. Share it securely, never in a public group.</p><p id="createdStudentEmail"></p><p id="createdStudentPassword" style="word-break:break-all"></p><button type="button" id="copyStudentCredentials" class="secondary">Copy Login Details</button><button type="button" id="hideStudentCredentials" class="secondary">Hide Details</button></div></div>
+<div class="panel"><h2>Approve New Student</h2><form id="addForm"><div class="row"><input id="uid" placeholder="Firebase Authentication UID" required minlength="15" maxlength="128"><input id="name" placeholder="Student name" required maxlength="100"></div><div class="row" style="margin-top:12px"><button id="addBtn">Approve Student</button></div></form><p id="addMsg" class="msg" role="status"></p></div>
+<div class="panel"><div class="row spread"><h2>Students</h2><input id="search" placeholder="Search name or UID" aria-label="Search students"></div><div id="students"></div><p id="listMsg" class="msg" role="status"></p></div></section><section id="coursesPanel" class="panel admin-view hidden" role="tabpanel" aria-labelledby="coursesTab"><h2>Course Management — Batch 1</h2><p class="muted">Manage 11 modules and lecture titles. Video IDs are deliberately not stored here until the protected VdoCipher backend is ready.</p><div class="course-tools"><button id="seedCourses">Initialize 11 Modules</button><button id="addModule" class="secondary">Add Module</button><input id="courseSearch" type="search" placeholder="Search modules or lectures" aria-label="Search course modules"></div><p id="courseMsg" class="msg" role="status"></p><div id="courseList"></div></section><section id="videosPanel" class="panel admin-view hidden" role="tabpanel" aria-labelledby="videosTab"><h2>Secure Video Management — Batch 1</h2><p class="muted">Prepare secure VdoCipher video links without exposing video IDs in the student catalog. No subscription is needed to prepare this dashboard.</p><button id="prepareVideoIds">Prepare Stable Lecture IDs</button><button id="refreshVideos" class="secondary">Refresh Video Status</button><p id="videoMsg" class="msg" role="status"></p><div id="videoList"></div></section></main>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {getFirestore,doc,getDoc,collection,onSnapshot,setDoc,updateDoc} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+const app=initializeApp({apiKey:"AIzaSyBLigEA-dRyj0goB3GkpA_TZbRToSMUyRk",authDomain:"tah-portal-36520.firebaseapp.com",projectId:"tah-portal-36520",storageBucket:"tah-portal-36520.firebasestorage.app",messagingSenderId:"1001287399874",appId:"1:1001287399874:web:cc789509a4d6b7b349fe5b"});
+const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
+let unsubscribe=null,unsubscribeCourses=null,students=[],adminUid=null,catalog=null;
+function showTab(tab){
+  const course=tab==="courses",video=tab==="videos";
+  $("dashboard").classList.toggle("hidden",course||video);
+  $("coursesPanel").classList.toggle("hidden",!course);
+  $("videosPanel").classList.toggle("hidden",!video);
+  for(const [id,selected] of [["studentsTab",!course&&!video],["coursesTab",course],["videosTab",video]])$(id).setAttribute("aria-selected",String(selected));
+  sessionStorage.setItem("tahAdminTab",tab);
+  if(video)loadVideoStatus();
+}
+$("studentsTab").onclick=()=>showTab("students");
+$("coursesTab").onclick=()=>showTab("courses");
+$("videosTab").onclick=()=>showTab("videos");
+const starterModules=[{"title":"TAH NODE 1: (Liquidity & Inefficiency)","lectures":[{"title":"LEC 1: Introduction to TAH - The Apex House","videoId":""},{"title":"LEC 2: ICT Volume Imbalance","videoId":""}]},{"title":"TAH NODE 2: (Dealing Range Theory)","lectures":[{"title":"LEC 1: Introduction to Dealing Ranges","videoId":""},{"title":"LEC 2: Premium & Discount Arrays","videoId":""}]},{"title":"TAH NODE 3: (FVG Types & Techniques)","lectures":[{"title":"LEC 1: Fair Value Gap Identification","videoId":""},{"title":"LEC 2: Advanced FVG Rebalancing Strategies","videoId":""}]},{"title":"TAH NODE 4: (ICT Block Theory & MSS)","lectures":[{"title":"LEC 1: Order Blocks & Breaker Blocks","videoId":""},{"title":"LEC 2: Market Structure Shift (MSS)","videoId":""}]},{"title":"TAH NODE 5: (ICT Bonus PD Arrays)","lectures":[{"title":"LEC 1: Mitigation Blocks & Rejection Blocks","videoId":""},{"title":"LEC 2: Liquidity Voids & Propulsion Blocks","videoId":""}]},{"title":"TAH NODE 6: (ICT Swing Theory)","lectures":[{"title":"LEC 1: Swing Highs & Swing Lows Setup","videoId":""},{"title":"LEC 2: Internal vs External Range Liquidity","videoId":""}]},{"title":"TAH NODE 7: (Intraday Architecture)","lectures":[{"title":"LEC 1: Session Openings & Key Levels","videoId":""},{"title":"LEC 2: Intraday Price Delivery Framework","videoId":""}]},{"title":"TAH NODE 8: (ICT Time & Price Theory)","lectures":[{"title":"LEC 1: Timing Daily Market Cycles","videoId":""},{"title":"LEC 2: Killzones & Opening Ranges","videoId":""}]},{"title":"TAH NODE 9: (ICT Power of 3 - Classic Buy/Sell Day)","lectures":[{"title":"LEC 1: Accumulation, Manipulation & Distribution (AMD)","videoId":""},{"title":"LEC 2: Identifying Classic Buy & Sell Days","videoId":""}]},{"title":"TAH NODE 10: (ICT Trading Models)","lectures":[{"title":"LEC 1: Core Algorithmic Model Walkthrough","videoId":""},{"title":"LEC 2: Execution Checklist & Rules","videoId":""}]},{"title":"TAH NODE 11: (IMPERIUM X - Risk Management)","lectures":[{"title":"LEC 1: Capital Preservation & Lot Sizing","videoId":""},{"title":"LEC 2: Trader Psychology & Risk Discipline","videoId":""}]}];
+function msg(id,text){$(id).textContent=text}
+function lock(){if(typeof clearCreatedStudentCredentials==="function")clearCreatedStudentCredentials();adminUid=null;if(unsubscribeCourses){unsubscribeCourses();unsubscribeCourses=null}catalog=null;$("adminNav").classList.add("hidden");$("coursesPanel").classList.add("hidden");$("videosPanel").classList.add("hidden");if(unsubscribe){unsubscribe();unsubscribe=null}students=[];$("dashboard").classList.add("hidden");$("loginPanel").classList.remove("hidden");$("logout").classList.add("hidden")}
+$("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginBtn").disabled=true;msg("loginMsg","Signing in...");try{await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value);$("password").value=""}catch(e){msg("loginMsg","Login failed. Check your credentials.")}finally{$("loginBtn").disabled=false}});
+$("logout").onclick=()=>signOut(auth);
+onAuthStateChanged(auth,async user=>{lock();if(!user)return;try{const a=await getDoc(doc(db,"admins",user.uid));if(!a.exists()||a.data().active!==true){msg("loginMsg","This account is not an approved admin. Create admins/{your UID} with active: true in Firestore Console.");return}adminUid=user.uid;$("adminNav").classList.remove("hidden");listenCourses();$("loginPanel").classList.add("hidden");showTab(["courses","videos"].includes(sessionStorage.getItem("tahAdminTab"))?sessionStorage.getItem("tahAdminTab"):"students");$("logout").classList.remove("hidden");$("identity").textContent=user.email||user.uid;msg("loginMsg","");unsubscribe=onSnapshot(collection(db,"Students"),snap=>{students=snap.docs.map(d=>({uid:d.id,...d.data()}));render()},e=>msg("listMsg","Could not load students. Check Firestore rules: "+e.code))}catch(e){msg("loginMsg","Admin permission check failed: "+e.code)}});
+async function resetStudentDevice(uid, button){
+  if(!adminUid || !confirm("Reset registered device for this student? Their current browser will lose access, and the next approved login can claim a device."))return;
+  button.disabled=true;
+  try{
+    const token=await auth.currentUser.getIdToken();
+    const response=await fetch("/api/device",{
+      method:"POST",headers:{"Content-Type":"application/json"},cache:"no-store",
+      body:JSON.stringify({action:"reset",idToken:token,studentUid:uid})
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok || !result.ok)throw new Error(result.error||"service_unavailable");
+    msg("listMsg","Device reset successful. Student can register a new browser on next login.");
+  }catch(e){msg("listMsg","Device reset failed: "+e.message)}
+  finally{button.disabled=false}
+}
+async function sendStudentPasswordReset(uid,name,button){
+ if(!adminUid||!auth.currentUser)return;
+ if(!confirm("Send a password reset email to "+name+"'s registered Firebase email?"))return;
+ button.disabled=true;
+ msg("listMsg","Checking registered student email...");
+ try{
+  const token=await auth.currentUser.getIdToken();
+  const response=await fetch("/api/student-reset-email",{
+   method:"POST",cache:"no-store",
+   headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+   body:JSON.stringify({studentUid:uid})
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||!result.ok)throw Error(result.error||"student_lookup_unavailable");
+  await sendPasswordResetEmail(auth,result.email);
+  msg("listMsg","Firebase accepted the password reset request for "+result.email+". Ask the student to check inbox/spam. Delivery is not guaranteed.");
+ }catch(e){
+  msg("listMsg","Password reset request failed: "+(e.code||e.message)+". Check Firebase Email/Password sign-in and email template settings.");
+ }finally{button.disabled=false}
+}
+async function deleteStudent(uid,name,button){
+ if(!adminUid||!auth.currentUser)return;
+ if(!confirm("Permanently remove "+name+"? This will delete their Firebase login and mentorship access. This cannot be undone."))return;
+ const typed=prompt('To permanently delete this student, type DELETE:');
+ if(typed!=="DELETE"){msg("listMsg","Removal cancelled. Type DELETE exactly to confirm.");return}
+ button.disabled=true;
+ try{
+  const token=await auth.currentUser.getIdToken();
+  const response=await fetch("/api/delete-student",{
+   method:"POST",cache:"no-store",
+   headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+   body:JSON.stringify({studentUid:uid})
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||!result.ok)throw Error(result.error||"service_unavailable");
+  msg("listMsg",name+" removed permanently. Their Firebase login and mentorship access were deleted.");
+ }catch(e){msg("listMsg","Student removal failed: "+e.message+". If incomplete, account is suspended; contact admin support.")}
+ finally{button.disabled=false}
+}
+function render(){const q=$("search").value.toLowerCase();$("total").textContent=students.length;$("active").textContent=students.filter(s=>s.active===true).length;const root=$("students");root.replaceChildren();for(const s of students.filter(s=>(s.name||"").toLowerCase().includes(q)||s.uid.toLowerCase().includes(q))){const item=document.createElement("div");item.className="student";const top=document.createElement("div");top.className="row spread";const name=document.createElement("strong");name.textContent=s.name||"Unnamed student";const badge=document.createElement("span");badge.className="pill "+(s.active===true?"on":"off");badge.textContent=s.active===true?"Active":"Suspended";top.append(name,badge);const uid=document.createElement("p");uid.className="muted small";uid.textContent="UID: "+s.uid;const controls=document.createElement("div");controls.className="row";const toggle=document.createElement("button");toggle.className=s.active===true?"danger":"success";toggle.textContent=s.active===true?"Suspend Access":"Activate Access";toggle.onclick=async()=>{if(!confirm((s.active===true?"Suspend":"Activate")+" this student?"))return;toggle.disabled=true;try{await updateDoc(doc(db,"Students",s.uid),{active:s.active!==true});msg("listMsg","Access updated.")}catch(e){msg("listMsg","Update failed: "+e.code)}finally{toggle.disabled=false}};const rename=document.createElement("button");rename.className="secondary";rename.textContent="Rename";rename.onclick=async()=>{const newName=prompt("Student name:",s.name||"");if(newName===null||!newName.trim())return;try{await updateDoc(doc(db,"Students",s.uid),{name:newName.trim().slice(0,100)});msg("listMsg","Name updated.")}catch(e){msg("listMsg","Update failed: "+e.code)}};const device=document.createElement("span");
+device.className="muted small";
+device.textContent=s.deviceBinding?"Device: Registered":"Device: Not registered";
+const reset=document.createElement("button");
+reset.className="secondary";
+reset.textContent="Reset Device";
+reset.disabled=!s.deviceBinding;
+reset.onclick=()=>resetStudentDevice(s.uid,reset);
+const remove=document.createElement("button");
+remove.className="danger";
+remove.textContent="Remove Student";
+remove.title="Permanently delete this student's Firebase login and portal access";
+remove.onclick=()=>deleteStudent(s.uid,s.name||s.uid,remove);
+const passwordReset=document.createElement("button");
+passwordReset.className="secondary";
+passwordReset.textContent="Reset Password";
+passwordReset.title="Send a Firebase password reset email to this student";
+passwordReset.onclick=()=>sendStudentPasswordReset(s.uid,s.name||s.uid,passwordReset);
+controls.append(toggle,rename,reset,passwordReset,remove);
+item.append(top,uid,device,controls);root.append(item)}if(!root.children.length){const empty=document.createElement("p");empty.className="muted";empty.textContent="No matching students.";root.append(empty)}}
+$("search").addEventListener("input",render);
+$("courseSearch").addEventListener("input",renderCourses);
+let lastCreatedStudentCredentials="";
+function clearCreatedStudentCredentials(){
+  lastCreatedStudentCredentials="";
+  $("createdStudentDetails").classList.add("hidden");
+  $("createdStudentEmail").textContent="";
+  $("createdStudentPassword").textContent="";
+}
+$("hideStudentCredentials").onclick=clearCreatedStudentCredentials;
+$("copyStudentCredentials").onclick=async()=>{
+  if(!lastCreatedStudentCredentials)return;
+  try{await navigator.clipboard.writeText(lastCreatedStudentCredentials);msg("createStudentMsg","Credentials copied. Share privately and clear clipboard after use.")}
+  catch{msg("createStudentMsg","Clipboard unavailable. Copy the displayed details manually.")}
+};
+$("createStudentForm").addEventListener("submit",async event=>{
+  event.preventDefault();
+  if(!adminUid||!auth.currentUser)return;
+  clearCreatedStudentCredentials();
+  const name=$("newStudentName").value.trim(),email=$("newStudentEmail").value.trim();
+  if(name.length<2||name.length>100||!$("newStudentEmail").validity.valid)return msg("createStudentMsg","Enter a valid name and email.");
+  if(!confirm("Create and activate student account for "+email+"?"))return;
+  $("createStudentBtn").disabled=true;
+  msg("createStudentMsg","Creating student account securely...");
+  try{
+    const idToken=await auth.currentUser.getIdToken();
+    const response=await fetch("/api/create-student",{
+      method:"POST",cache:"no-store",
+      headers:{"Authorization":"Bearer "+idToken,"Content-Type":"application/json"},
+      body:JSON.stringify({name,email})
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok||!result.ok)throw Error(result.error||"service_unavailable");
+    lastCreatedStudentCredentials="TAH Portal: https://tah-private-mentorship.vercel.app/\\nEmail: "+result.email+"\\nTemporary password: "+result.temporaryPassword;
+    $("createdStudentEmail").textContent="Email: "+result.email;
+    $("createdStudentPassword").textContent="Temporary password: "+result.temporaryPassword;
+    $("createdStudentDetails").classList.remove("hidden");
+    $("createStudentForm").reset();
+    msg("createStudentMsg","Student created and access activated. Save the temporary password now.");
+  }catch(e){msg("createStudentMsg","Could not create student: "+e.message)}
+  finally{$("createStudentBtn").disabled=false}
+});
+$("addForm").addEventListener("submit",async e=>{e.preventDefault();if(!adminUid)return;const uid=$("uid").value.trim(),name=$("name").value.trim();if(!/^[A-Za-z0-9_-]{15,128}$/.test(uid)||!name){msg("addMsg","Enter a valid Firebase UID and name.");return}if(!confirm("Approve UID "+uid+"? Verify it exists in Firebase Authentication first."))return;$("addBtn").disabled=true;try{const ref=doc(db,"Students",uid);if((await getDoc(ref)).exists()){msg("addMsg","Student record already exists. Use Activate Access instead.");return}await setDoc(ref,{name,role:"student",active:true});$("addForm").reset();msg("addMsg","Student approved. Make sure UID matches Firebase Authentication.")}catch(e){msg("addMsg","Could not approve student: "+e.code)}finally{$("addBtn").disabled=false}});
+
+function listenCourses(){
+  unsubscribeCourses=onSnapshot(doc(db,"courseCatalog","batch1"),snap=>{
+    catalog=snap.exists()?snap.data():null;
+    renderCourses();renderVideoList();
+  },err=>msg("courseMsg","Course catalog error: "+err.code));
+}
+function renderCourses(){
+  const root=$("courseList");root.replaceChildren();
+  $("seedCourses").disabled=!!catalog;
+  if(!catalog){msg("courseMsg","No course catalog yet. Click Initialize 11 Modules once.");return}
+  msg("courseMsg",catalog.modules.length+" modules loaded. Changes appear in the student portal automatically.");
+  const filter=$("courseSearch").value.trim().toLowerCase();
+  catalog.modules.forEach((module,i)=>{
+    if(filter && !module.title.toLowerCase().includes(filter) && !(module.lectures||[]).some(l=>l.title.toLowerCase().includes(filter)))return;
+    const section=document.createElement("div");section.className="student";
+    const title=document.createElement("strong");title.textContent=(i+1)+". "+module.title;
+    const buttons=document.createElement("div");buttons.className="row";buttons.style.marginTop="9px";
+    const rename=document.createElement("button");rename.className="secondary";rename.textContent="Rename Module";rename.onclick=()=>editCatalog(async nodes=>{const v=prompt("Module title:",nodes[i].title);if(v===null||!v.trim())return false;nodes[i].title=v.trim().slice(0,160)});
+    const add=document.createElement("button");add.textContent="Add Lecture";add.onclick=()=>editCatalog(async nodes=>{const v=prompt("New lecture title:");if(!v?.trim())return false;nodes[i].lectures.push({id:crypto.randomUUID(),title:v.trim().slice(0,160),videoId:"",releaseMode:"locked",releaseAt:""})});
+    buttons.append(rename,add);section.append(title,buttons);
+    (module.lectures||[]).forEach((lec,j)=>{
+      const row=document.createElement("div");row.className="row";row.style.marginTop="10px";
+      const label=document.createElement("span");label.className="muted";label.style.flex="1";label.textContent=(j+1)+". "+lec.title;
+      const edit=document.createElement("button");edit.className="secondary";edit.textContent="Edit";edit.onclick=()=>editCatalog(async nodes=>{const v=prompt("Lecture title:",nodes[i].lectures[j].title);if(v===null||!v.trim())return false;nodes[i].lectures[j].title=v.trim().slice(0,160)});
+      const del=document.createElement("button");del.className="danger";del.textContent="Delete";del.onclick=()=>{if(confirm("Delete this lecture?"))editCatalog(async nodes=>{nodes[i].lectures.splice(j,1)})};
+      const mode=document.createElement("select");
+      for(const [value,text] of [["unlocked","Unlocked"],["locked","Locked"]]){
+        const option=document.createElement("option");option.value=value;option.textContent=text;mode.append(option);
+      }
+      mode.value=lec.releaseMode==="unlocked"?"unlocked":"locked";
+      mode.setAttribute("aria-label","Lecture access: "+lec.title);
+      mode.onchange=()=>editCatalog(async nodes=>{
+        nodes[i].lectures[j].releaseMode=mode.value;
+        nodes[i].lectures[j].releaseAt="";
+      });
+      const controls=document.createElement("div");controls.className="row";controls.style.marginTop="7px";
+      controls.append(mode);
+      row.append(label,edit,del);section.append(row,controls);
+    });
+    root.append(section);
+  });
+}
+async function editCatalog(change){
+  if(!adminUid||!catalog)return;
+  const nodes=JSON.parse(JSON.stringify(catalog.modules));
+  if(await change(nodes)===false)return;
+  try{await updateDoc(doc(db,"courseCatalog","batch1"),{modules:nodes});msg("courseMsg","Saved!")}catch(e){msg("courseMsg","Save failed: "+e.code)}
+}
+$("seedCourses").onclick=async()=>{
+  if(!adminUid||catalog)return;
+  if(!confirm("Create the initial 11 modules and 22 lectures?"))return;
+  $("seedCourses").disabled=true;
+  try{
+    const ref=doc(db,"courseCatalog","batch1");
+    starterModules.forEach(m=>m.lectures.forEach(l=>{l.id=crypto.randomUUID()}));
+    if((await getDoc(ref)).exists()){msg("courseMsg","Already initialized.");return}
+    await setDoc(ref,{modules:starterModules});
+    msg("courseMsg","Initial modules saved.");
+  }catch(e){msg("courseMsg","Initialization failed: "+e.code)}
+  finally{$("seedCourses").disabled=!!catalog}
+};
+$("addModule").onclick=()=>editCatalog(async nodes=>{
+  const v=prompt("New module title:");if(!v?.trim())return false;
+  nodes.push({title:v.trim().slice(0,160),lectures:[]});
+});
+
+
+let linkedVideoIds=new Set();
+async function videoApi(method,body){
+ const token=await auth.currentUser.getIdToken();
+ const response=await fetch("/api/admin-videos",{
+  method,headers:{"Authorization":"Bearer "+token,...(body?{"Content-Type":"application/json"}:{})},
+  cache:"no-store",...(body?{body:JSON.stringify(body)}:{})
+ });
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error(data.error||"service_unavailable");
+ return data;
+}
+async function loadVideoStatus(){
+ if(!adminUid)return;
+ try{
+  const result=await videoApi("GET");
+  linkedVideoIds=new Set(result.videos||[]);
+  msg("videoMsg","Video mapping service connected. IDs remain server-side.");
+ }catch(e){linkedVideoIds=new Set();msg("videoMsg","Video mapping unavailable: "+e.message+". Check Vercel backend configuration.")}
+ renderVideoList();
+}
+$("refreshVideos").onclick=loadVideoStatus;
+$("prepareVideoIds").onclick=async()=>{
+ if(!adminUid||!catalog)return msg("videoMsg","Course catalog is not loaded.");
+ const missing=catalog.modules.reduce((n,m)=>n+(m.lectures||[]).filter(l=>!l.id).length,0);
+ if(!missing)return msg("videoMsg","All lectures already have stable IDs.");
+ if(!confirm("Assign stable IDs to "+missing+" existing lectures? Titles and lock settings will stay unchanged."))return;
+ $("prepareVideoIds").disabled=true;
+ try{
+  const modules=structuredClone(catalog.modules);
+  modules.forEach(m=>(m.lectures||[]).forEach(l=>{if(!l.id)l.id=crypto.randomUUID()}));
+  await updateDoc(doc(db,"courseCatalog","batch1"),{modules});
+  msg("videoMsg","Stable lecture IDs saved. You can now attach video IDs.");
+ }catch(e){msg("videoMsg","Could not prepare IDs: "+e.message)}
+ finally{$("prepareVideoIds").disabled=false}
+};
+function renderVideoList(){
+ const root=$("videoList");if(!root)return;root.replaceChildren();
+ if(!catalog)return;
+ const missing=catalog.modules.some(m=>(m.lectures||[]).some(l=>!l.id));
+ $("prepareVideoIds").disabled=!missing;
+ if(missing){const p=document.createElement("p");p.className="muted";p.textContent="First click Prepare Stable Lecture IDs to enable secure mapping.";root.append(p)}
+ catalog.modules.forEach((module,i)=>{
+  const section=document.createElement("div");section.className="student";
+  const heading=document.createElement("strong");heading.textContent=module.title;section.append(heading);
+  (module.lectures||[]).forEach(lecture=>{
+   const row=document.createElement("div");row.className="row";row.style.marginTop="12px";
+   const name=document.createElement("span");name.className="muted";name.style.flex="1";name.textContent=lecture.title;
+   const status=document.createElement("span");status.className="pill "+(linkedVideoIds.has(lecture.id)?"on":"off");
+   status.textContent=linkedVideoIds.has(lecture.id)?"Video linked":"Not linked";
+   const link=document.createElement("button");link.className="secondary";
+   link.textContent="Set Video ID";link.disabled=!lecture.id;
+   link.onclick=async()=>{
+    const value=prompt("Enter VdoCipher Video ID for: "+lecture.title+"\nLeave blank to remove existing mapping. Never paste API secret.");
+    if(value===null)return;
+    const videoId=value.trim();
+    if(videoId&&!/^[A-Za-z0-9_-]{8,64}$/.test(videoId))return msg("videoMsg","Invalid video ID format.");
+    if(!videoId&&!confirm("Remove video mapping for this lecture?"))return;
+    link.disabled=true;
+    try{
+     await videoApi("POST",{lectureId:lecture.id,videoId});
+     if(videoId)linkedVideoIds.add(lecture.id);else linkedVideoIds.delete(lecture.id);
+     msg("videoMsg","Video mapping saved securely for "+lecture.title);
+     renderVideoList();
+    }catch(e){msg("videoMsg","Could not save video: "+e.message);link.disabled=false}
+   };
+   row.append(name,status,link);section.append(row);
+  });
+  root.append(section);
+ });
+}
+</script><script>if ("serviceWorker" in navigator) { window.addEventListener("load", () => { navigator.serviceWorker.register("/sw.js").catch(() => {}); }); }</script></body></html>
