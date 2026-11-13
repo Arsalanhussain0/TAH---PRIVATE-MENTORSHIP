@@ -588,6 +588,8 @@
       [loginScreen, coursesScreen, chaptersScreen, lecturesListScreen, videoPlayerScreen].forEach(s => s.classList.add('hidden'));
       screenToShow.classList.remove('hidden');
       if (screenToShow !== videoPlayerScreen) {
+        playbackRequestNumber++;
+        stopPreviewWatermark();
         iframeContainer.innerHTML = "";
       }
     }
@@ -695,6 +697,7 @@
       const requestNumber = ++playbackRequestNumber;
       currentPlayingTitle.textContent = title;
       showScreen(videoPlayerScreen);
+      startPreviewWatermark(currentUserEmail || auth.currentUser?.email || "TAH Student");
       iframeContainer.replaceChildren();
       const status = document.createElement("p");
       status.style.cssText = "position:absolute;inset:0;display:grid;place-items:center;padding:22px;text-align:center;color:#cbd5e1";
@@ -740,7 +743,7 @@
         iframe.style.cssText = "border:0;position:absolute;inset:0;width:100%;height:100%";
         iframeContainer.replaceChildren(iframe);
         // Provider-side watermark is applied by backend OTP annotation.
-        watermarkOverlay.textContent = "";
+        stopPreviewWatermark();
       } catch (error) {
         if (requestNumber === playbackRequestNumber) status.textContent =
           "Cannot connect to secure video service. Please try again later.";
@@ -748,6 +751,8 @@
     }
 
     function goBackFromVideo() {
+      playbackRequestNumber++;
+      stopPreviewWatermark();
       if (videoWrapperBox.classList.contains('css-fullscreen')) {
         toggleCustomFullscreen();
       }
@@ -769,18 +774,22 @@
       }
     }
 
-    function initWatermark(email) {
-      watermarkOverlay.innerText = email;
-      const moveInterval = setInterval(() => {
-        if (videoPlayerScreen.classList.contains('hidden')) {
-          clearInterval(moveInterval);
-          return;
-        }
-        const top = Math.floor(Math.random() * 80) + 10;
-        const left = Math.floor(Math.random() * 70) + 10;
-        watermarkOverlay.style.top = top + '%';
-        watermarkOverlay.style.left = left + '%';
-      }, 2500);
+    let previewWatermarkTimer = null;
+    function stopPreviewWatermark() {
+      if (previewWatermarkTimer !== null) clearInterval(previewWatermarkTimer);
+      previewWatermarkTimer = null;
+      watermarkOverlay.textContent = "";
+    }
+    function startPreviewWatermark(email) {
+      stopPreviewWatermark();
+      watermarkOverlay.textContent = email + " • TAH PRIVATE MENTORSHIP";
+      watermarkOverlay.style.cssText += ";max-width:70%;overflow-wrap:anywhere;opacity:.68;text-align:center;";
+      const move = () => {
+        watermarkOverlay.style.top = (12 + Math.random() * 65) + "%";
+        watermarkOverlay.style.left = (5 + Math.random() * 35) + "%";
+      };
+      move();
+      previewWatermarkTimer = setInterval(move, 3200);
     }
 
     const canvas = document.getElementById('neon-canvas');
