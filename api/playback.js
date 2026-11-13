@@ -35,7 +35,7 @@ module.exports=async function handler(req,res){
     if(!lecture)return respond(res,404,{error:"lecture_not_found"});
     if(lecture.releaseMode!=="unlocked")return respond(res,403,{error:"lecture_locked"});
     // Keep IDs server-side. Admin provisions mapping via trusted Admin SDK only.
-    const videoId=videoSnap.data()?.modules?.[moduleIndex]?.lectures?.[lectureIndex];
+    const videoId=lecture.id && videoSnap.data()?.videos?.[lecture.id];
     if(typeof videoId!=="string"||!/^[a-zA-Z0-9_-]{8,64}$/.test(videoId))
       return respond(res,404,{error:"video_not_uploaded"});
     const watermark=(user.email||user.uid).replace(/[\r\n\[\]{}'"]/g," ").slice(0,120);
