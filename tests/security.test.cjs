@@ -20,6 +20,7 @@ function harness(file,initial={}){
     }}),
     firestore:()=>({
       doc:path=>({
+        path,
         get:async()=>snapshot(path),
         set:async(data,opts)=>{writes.push(path);const old=records.get(path)||{};records.set(path,opts?.merge?{...old,...data}:data)},
         update:async(data)=>{writes.push(path);if(!records.has(path))throw Object.assign(Error("missing"),{code:5});apply(path,data)}
