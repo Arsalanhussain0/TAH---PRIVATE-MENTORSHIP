@@ -37,7 +37,8 @@ module.exports=async function handler(req,res){
       await db.doc("Students/"+created.uid).create({
         name:name.trim(),email:normalizedEmail,role:"student",active:true,
         createdAt:admin.firestore.FieldValue.serverTimestamp(),
-        createdBy:caller.uid
+        createdBy:caller.uid,
+        mustChangePassword:true,temporaryPasswordHash:crypto.createHash("sha256").update(temporaryPassword).digest("hex")
       });
     }catch(e){
       // Never leave an unapproved orphan account if Firestore provisioning fails.
