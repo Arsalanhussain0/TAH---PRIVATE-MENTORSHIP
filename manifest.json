@@ -1,9 +1,9 @@
 {
-  "name": "Trader Arsalan Hussain | Student Portal",
-  "short_name": "TAH Portal",
+  "name": "TAH — The Apex House | Student Portal",
+  "short_name": "TAH Student",
   "description": "Official Student Access Portal for TAH Mentorship by Trader Arsalan Hussain",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/student/",
+  "scope": "/student/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#07080a",
@@ -25,5 +25,6 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "id": "/student/"
 }
