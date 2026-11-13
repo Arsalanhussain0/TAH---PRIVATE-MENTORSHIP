@@ -70,6 +70,25 @@ async function resetStudentDevice(uid, button){
   }catch(e){msg("listMsg","Device reset failed: "+e.message)}
   finally{button.disabled=false}
 }
+async function deleteStudent(uid,name,button){
+ if(!adminUid||!auth.currentUser)return;
+ if(!confirm("Permanently remove "+name+"? This will delete their Firebase login and mentorship access. This cannot be undone."))return;
+ const typed=prompt('To permanently delete this student, type DELETE:');
+ if(typed!=="DELETE"){msg("listMsg","Removal cancelled. Type DELETE exactly to confirm.");return}
+ button.disabled=true;
+ try{
+  const token=await auth.currentUser.getIdToken();
+  const response=await fetch("/api/delete-student",{
+   method:"POST",cache:"no-store",
+   headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+   body:JSON.stringify({studentUid:uid})
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||!result.ok)throw Error(result.error||"service_unavailable");
+  msg("listMsg",name+" removed permanently. Their Firebase login and mentorship access were deleted.");
+ }catch(e){msg("listMsg","Student removal failed: "+e.message+". If incomplete, account is suspended; contact admin support.")}
+ finally{button.disabled=false}
+}
 function render(){const q=$("search").value.toLowerCase();$("total").textContent=students.length;$("active").textContent=students.filter(s=>s.active===true).length;const root=$("students");root.replaceChildren();for(const s of students.filter(s=>(s.name||"").toLowerCase().includes(q)||s.uid.toLowerCase().includes(q))){const item=document.createElement("div");item.className="student";const top=document.createElement("div");top.className="row spread";const name=document.createElement("strong");name.textContent=s.name||"Unnamed student";const badge=document.createElement("span");badge.className="pill "+(s.active===true?"on":"off");badge.textContent=s.active===true?"Active":"Suspended";top.append(name,badge);const uid=document.createElement("p");uid.className="muted small";uid.textContent="UID: "+s.uid;const controls=document.createElement("div");controls.className="row";const toggle=document.createElement("button");toggle.className=s.active===true?"danger":"success";toggle.textContent=s.active===true?"Suspend Access":"Activate Access";toggle.onclick=async()=>{if(!confirm((s.active===true?"Suspend":"Activate")+" this student?"))return;toggle.disabled=true;try{await updateDoc(doc(db,"Students",s.uid),{active:s.active!==true});msg("listMsg","Access updated.")}catch(e){msg("listMsg","Update failed: "+e.code)}finally{toggle.disabled=false}};const rename=document.createElement("button");rename.className="secondary";rename.textContent="Rename";rename.onclick=async()=>{const newName=prompt("Student name:",s.name||"");if(newName===null||!newName.trim())return;try{await updateDoc(doc(db,"Students",s.uid),{name:newName.trim().slice(0,100)});msg("listMsg","Name updated.")}catch(e){msg("listMsg","Update failed: "+e.code)}};const device=document.createElement("span");
 device.className="muted small";
 device.textContent=s.deviceBinding?"Device: Registered":"Device: Not registered";
@@ -78,7 +97,12 @@ reset.className="secondary";
 reset.textContent="Reset Device";
 reset.disabled=!s.deviceBinding;
 reset.onclick=()=>resetStudentDevice(s.uid,reset);
-controls.append(toggle,rename,reset);
+const remove=document.createElement("button");
+remove.className="danger";
+remove.textContent="Remove Student";
+remove.title="Permanently delete this student's Firebase login and portal access";
+remove.onclick=()=>deleteStudent(s.uid,s.name||s.uid,remove);
+controls.append(toggle,rename,reset,remove);
 item.append(top,uid,device,controls);root.append(item)}if(!root.children.length){const empty=document.createElement("p");empty.className="muted";empty.textContent="No matching students.";root.append(empty)}}
 $("search").addEventListener("input",render);
 $("courseSearch").addEventListener("input",renderCourses);
