@@ -1,0 +1,25 @@
+{
+  "id": "/admin.html",
+  "name": "TAH — The Apex House | Admin Dashboard",
+  "short_name": "TAH Admin",
+  "description": "Private TAH mentorship administration dashboard",
+  "start_url": "/admin.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#050811",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
