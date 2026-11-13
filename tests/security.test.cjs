@@ -27,7 +27,8 @@ function harness(file,initial={}){
       }),
       runTransaction:async(fn)=>fn({
         get:async ref=>snapshot(ref.path),
-        update:(ref,data)=>{writes.push(ref.path);apply(ref.path,data)}
+        update:(ref,data)=>{writes.push(ref.path);apply(ref.path,data)},
+        set:(ref,data)=>{writes.push(ref.path);records.set(ref.path,data)}
       })
     })
   };
