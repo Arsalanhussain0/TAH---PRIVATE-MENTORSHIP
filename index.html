@@ -325,6 +325,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
     let unsubscribeStudent = null;
+    let unsubscribeCourses = null;
     let approvedUid = null;
     // Register the updated Service Worker normally.
     // updateViaCache:'none' asks the browser to revalidate sw.js instead of
@@ -343,7 +344,7 @@
       });
     }
 
-    const batch1Nodes = [
+    let batch1Nodes = [
       {
         title: "TAH NODE 1: (Liquidity & Inefficiency)",
         lectures: [
@@ -449,6 +450,7 @@
     showScreen(loginScreen);
     onAuthStateChanged(auth, async (user) => {
       if (unsubscribeStudent) { unsubscribeStudent(); unsubscribeStudent = null; }
+      if (unsubscribeCourses) { unsubscribeCourses(); unsubscribeCourses = null; }
       approvedUid = null;
       currentUserEmail = "";
       iframeContainer.innerHTML = "";
