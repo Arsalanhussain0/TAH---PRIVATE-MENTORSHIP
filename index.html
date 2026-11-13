@@ -462,7 +462,8 @@
         if (!snapshot.exists() || record.active !== true || record.role !== "student") {
           approvedUid = null;
           currentUserEmail = "";
-          iframeContainer.innerHTML = "";
+          if (unsubscribeCourses) { unsubscribeCourses(); unsubscribeCourses = null; }
+          iframeContainer.replaceChildren();
           showScreen(loginScreen);
           document.getElementById("error-msg").textContent = "Your mentorship access is not approved or has been disabled.";
           document.getElementById("error-msg").style.display = "block";
@@ -485,7 +486,15 @@
             }));
             if (!chaptersScreen.classList.contains("hidden")) openBatch1Chapters();
             if (!lecturesListScreen.classList.contains("hidden") && batch1Nodes[activeModuleIndex]) openLecturesList(activeModuleIndex);
-          }, (error) => console.error("Course sync failed:", error.code));
+          }, (error) => {
+            console.error("Course sync failed:", error.code);
+            batch1Nodes = [];
+            iframeContainer.replaceChildren();
+            showScreen(coursesScreen);
+            const message = document.getElementById("error-msg");
+            message.textContent = "Course access cannot be verified right now. Please try again later.";
+            message.style.display = "block";
+          });
         }
         currentUserEmail = user.email || "";
         document.getElementById("user-display").textContent = currentUserEmail;
@@ -493,7 +502,8 @@
         if (loginScreen.classList.contains("hidden") === false) showScreen(coursesScreen);
       }, (error) => {
         approvedUid = null;
-        iframeContainer.innerHTML = "";
+        if (unsubscribeCourses) { unsubscribeCourses(); unsubscribeCourses = null; }
+        iframeContainer.replaceChildren();
         showScreen(loginScreen);
         document.getElementById("error-msg").textContent = "Cannot verify access. Check Firestore rules and internet connection.";
         document.getElementById("error-msg").style.display = "block";
@@ -557,10 +567,12 @@
         const item = document.createElement('div');
         item.className = 'list-item';
         item.onclick = () => openLecturesList(index);
-        item.innerHTML = `
-          <h4>${node.title}</h4>
-          <span style="color:#3b82f6;">${node.lectures.length} Videos</span>
-        `;
+        const heading = document.createElement("h4");
+        heading.textContent = node.title;
+        const count = document.createElement("span");
+        count.style.color = "#3b82f6";
+        count.textContent = node.lectures.length + " Videos";
+        item.append(heading, count);
         modulesListContainer.appendChild(item);
       });
       showScreen(chaptersScreen);
