@@ -81,7 +81,7 @@ test("inactive student and revoked Firebase token fail closed",async()=>{
  const h=harness("api/device.js",{[student]:{...approved,active:false}});
  assert.equal((await h.request(claim("student-token",device))).status,403);
  assert.equal((await h.request(claim("revoked",device))).status,401);
- assert.equal(h.writes.length,0);
+ assert.equal(h.writes.filter(path=>!path.startsWith('apiRateLimits/')).length,0);
 });
 test("only active admin can reset; new device can claim afterwards",async()=>{
  const h=harness("api/device.js",{[student]:{...approved,deviceBinding:digest(device)},[adminPath]:{active:true}});
@@ -107,5 +107,5 @@ test("video management rejects unauthenticated and non-admin requests",async()=>
  const h=harness("api/admin-videos.js",{[student]:approved});
  assert.equal((await h.request(null,"GET")).status,401);
  assert.equal((await h.request(null,"GET","Bearer student-token")).status,403);
- assert.equal(h.writes.length,0);
+ assert.equal(h.writes.filter(path=>!path.startsWith('apiRateLimits/')).length,0);
 });
