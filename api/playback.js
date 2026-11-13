@@ -1,3 +1,4 @@
+const {enforceRateLimit}=require("../lib/rate-limit");
 // Secure VdoCipher playback endpoint. Not enabled until VDOCIPHER_API_SECRET
 // and private video mapping are configured. Never trust client-supplied video IDs.
 const crypto=require("node:crypto");
@@ -22,6 +23,7 @@ module.exports=async function handler(req,res){
   catch{return respond(res,401,{error:"invalid_session"})}
   try{
     const db=admin.firestore();
+    if(!await enforceRateLimit(db,user.uid,"playback",res))return;
     const [studentSnap,catalogSnap,videoSnap]=await Promise.all([
       db.doc("Students/"+user.uid).get(),
       db.doc("courseCatalog/batch1").get(),
