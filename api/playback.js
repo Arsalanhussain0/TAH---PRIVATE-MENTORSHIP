@@ -33,8 +33,8 @@ module.exports=async function handler(req,res){
     if(!student.deviceBinding||student.deviceBinding!==hash)return respond(res,403,{error:"device_not_authorized"});
     const lecture=catalogSnap.data()?.modules?.[moduleIndex]?.lectures?.[lectureIndex];
     if(!lecture)return respond(res,404,{error:"lecture_not_found"});
-    if(lecture.releaseMode!=="unlocked")return respond(res,403,{error:"lecture_locked"});
-    // Keep IDs server-side. Admin provisions mapping via trusted Admin SDK only.
+    if(lecture.releaseMode==="locked")return respond(res,403,{error:"lecture_locked"});
+    // Keep IDs server-side. Only authenticated admins can provision mapping.
     const videoId=lecture.id && videoSnap.data()?.videos?.[lecture.id];
     if(typeof videoId!=="string"||!/^[a-zA-Z0-9_-]{8,64}$/.test(videoId))
       return respond(res,404,{error:"video_not_uploaded"});
