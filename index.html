@@ -478,7 +478,7 @@
               title: String(node.title || "Untitled module"),
               lectures: Array.isArray(node.lectures) ? node.lectures.map(lecture => ({
                 title: String(lecture.title || "Untitled lecture"),
-                releaseMode: lecture.releaseMode || "unlocked",
+                releaseMode: lecture.releaseMode === "unlocked" || !lecture.releaseMode ? "unlocked" : "locked",
                 releaseAt: lecture.releaseAt || "",
                 videoId: ""
               })) : []
@@ -567,20 +567,10 @@
     }
 
     function isReleased(lec) {
-      if (lec.releaseMode === "locked") return false;
-      if (lec.releaseMode === "scheduled") {
-        const ms = Date.parse(lec.releaseAt || "");
-        return Number.isFinite(ms) && Date.now() >= ms;
-      }
-      return true;
+      return lec.releaseMode !== "locked";
     }
     function releaseLabel(lec) {
-      if (lec.releaseMode === "locked") return "Locked";
-      if (lec.releaseMode === "scheduled") {
-        const ms = Date.parse(lec.releaseAt || "");
-        return Number.isFinite(ms) ? "Unlocks " + new Date(ms).toLocaleString() : "Scheduled";
-      }
-      return "Watch";
+      return lec.releaseMode === "locked" ? "Locked" : "Watch";
     }
     function openLecturesList(nodeIndex) {
       if (!approvedUid || auth.currentUser?.uid !== approvedUid) return;
