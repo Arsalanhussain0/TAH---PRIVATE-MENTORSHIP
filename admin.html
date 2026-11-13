@@ -42,14 +42,41 @@ function renderCourses(){
     const title=document.createElement("strong");title.textContent=(i+1)+". "+module.title;
     const buttons=document.createElement("div");buttons.className="row";buttons.style.marginTop="9px";
     const rename=document.createElement("button");rename.className="secondary";rename.textContent="Rename Module";rename.onclick=()=>editCatalog(async nodes=>{const v=prompt("Module title:",nodes[i].title);if(v===null||!v.trim())return false;nodes[i].title=v.trim().slice(0,160)});
-    const add=document.createElement("button");add.textContent="Add Lecture";add.onclick=()=>editCatalog(async nodes=>{const v=prompt("New lecture title:");if(!v?.trim())return false;nodes[i].lectures.push({title:v.trim().slice(0,160),videoId:""})});
+    const add=document.createElement("button");add.textContent="Add Lecture";add.onclick=()=>editCatalog(async nodes=>{const v=prompt("New lecture title:");if(!v?.trim())return false;nodes[i].lectures.push({title:v.trim().slice(0,160),videoId:"",releaseMode:"locked",releaseAt:""})});
     buttons.append(rename,add);section.append(title,buttons);
     (module.lectures||[]).forEach((lec,j)=>{
       const row=document.createElement("div");row.className="row";row.style.marginTop="10px";
       const label=document.createElement("span");label.className="muted";label.style.flex="1";label.textContent=(j+1)+". "+lec.title;
       const edit=document.createElement("button");edit.className="secondary";edit.textContent="Edit";edit.onclick=()=>editCatalog(async nodes=>{const v=prompt("Lecture title:",nodes[i].lectures[j].title);if(v===null||!v.trim())return false;nodes[i].lectures[j].title=v.trim().slice(0,160)});
       const del=document.createElement("button");del.className="danger";del.textContent="Delete";del.onclick=()=>{if(confirm("Delete this lecture?"))editCatalog(async nodes=>{nodes[i].lectures.splice(j,1)})};
-      row.append(label,edit,del);section.append(row);
+      const mode=document.createElement("select");
+      for(const [value,text] of [["unlocked","Unlocked"],["locked","Locked"],["scheduled","Scheduled"]]){
+        const option=document.createElement("option");option.value=value;option.textContent=text;mode.append(option);
+      }
+      mode.value=["locked","scheduled","unlocked"].includes(lec.releaseMode)?lec.releaseMode:"unlocked";
+      mode.setAttribute("aria-label","Release mode: "+lec.title);
+      mode.onchange=()=>editCatalog(async nodes=>{
+        if(mode.value==="scheduled" && !Number.isFinite(Date.parse(nodes[i].lectures[j].releaseAt||""))){
+          alert("First select a release date and time.");return false;
+        }
+        nodes[i].lectures[j].releaseMode=mode.value;
+        if(mode.value!=="scheduled")nodes[i].lectures[j].releaseAt="";
+      });
+      const date=document.createElement("input");date.type="datetime-local";date.style.flex="0 1 220px";date.style.minWidth="180px";
+      date.setAttribute("aria-label","Release date and time: "+lec.title);
+      const parsed=Date.parse(lec.releaseAt||"");
+      if(Number.isFinite(parsed)){
+        const d=new Date(parsed);date.value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+      }
+      date.onchange=()=>editCatalog(async nodes=>{
+        if(!date.value)return false;
+        const ms=new Date(date.value).getTime();
+        if(!Number.isFinite(ms))return false;
+        nodes[i].lectures[j].releaseMode="scheduled";
+        nodes[i].lectures[j].releaseAt=new Date(ms).toISOString();
+      });
+      const schedule=document.createElement("div");schedule.className="row";schedule.style.marginTop="7px";schedule.append(mode,date);
+      row.append(label,edit,del);section.append(row,schedule);
     });
     root.append(section);
   });
