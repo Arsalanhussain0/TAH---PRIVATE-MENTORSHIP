@@ -32,7 +32,7 @@ button{transition:background .15s,transform .15s}button:active{transform:scale(.
 <div class="panel"><div class="row spread"><h2>Students</h2><input id="search" placeholder="Search name or UID" aria-label="Search students"></div><div id="students"></div><p id="listMsg" class="msg" role="status"></p></div></section><section id="coursesPanel" class="panel admin-view hidden" role="tabpanel" aria-labelledby="coursesTab"><h2>Course Management — Batch 1</h2><p class="muted">Manage 11 modules and lecture titles. Video IDs are deliberately not stored here until the protected VdoCipher backend is ready.</p><div class="course-tools"><button id="seedCourses">Initialize 11 Modules</button><button id="addModule" class="secondary">Add Module</button><input id="courseSearch" type="search" placeholder="Search modules or lectures" aria-label="Search course modules"></div><p id="courseMsg" class="msg" role="status"></p><div id="courseList"></div></section><section id="videosPanel" class="panel admin-view hidden" role="tabpanel" aria-labelledby="videosTab"><h2>Secure Video Management — Batch 1</h2><p class="muted">Prepare secure VdoCipher video links without exposing video IDs in the student catalog. No subscription is needed to prepare this dashboard.</p><button id="prepareVideoIds">Prepare Stable Lecture IDs</button><button id="refreshVideos" class="secondary">Refresh Video Status</button><p id="videoMsg" class="msg" role="status"></p><div id="videoList"></div></section></main>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,sendPasswordResetEmail,signOut} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import {getFirestore,doc,getDoc,collection,onSnapshot,setDoc,updateDoc} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const app=initializeApp({apiKey:"AIzaSyBLigEA-dRyj0goB3GkpA_TZbRToSMUyRk",authDomain:"tah-portal-36520.firebaseapp.com",projectId:"tah-portal-36520",storageBucket:"tah-portal-36520.firebasestorage.app",messagingSenderId:"1001287399874",appId:"1:1001287399874:web:cc789509a4d6b7b349fe5b"});
 const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
@@ -70,6 +70,26 @@ async function resetStudentDevice(uid, button){
   }catch(e){msg("listMsg","Device reset failed: "+e.message)}
   finally{button.disabled=false}
 }
+async function sendStudentPasswordReset(uid,name,button){
+ if(!adminUid||!auth.currentUser)return;
+ if(!confirm("Send a password reset email to "+name+"'s registered Firebase email?"))return;
+ button.disabled=true;
+ msg("listMsg","Checking registered student email...");
+ try{
+  const token=await auth.currentUser.getIdToken();
+  const response=await fetch("/api/student-reset-email",{
+   method:"POST",cache:"no-store",
+   headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+   body:JSON.stringify({studentUid:uid})
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||!result.ok)throw Error(result.error||"student_lookup_unavailable");
+  await sendPasswordResetEmail(auth,result.email);
+  msg("listMsg","Firebase accepted the password reset request for "+result.email+". Ask the student to check inbox/spam. Delivery is not guaranteed.");
+ }catch(e){
+  msg("listMsg","Password reset request failed: "+(e.code||e.message)+". Check Firebase Email/Password sign-in and email template settings.");
+ }finally{button.disabled=false}
+}
 async function deleteStudent(uid,name,button){
  if(!adminUid||!auth.currentUser)return;
  if(!confirm("Permanently remove "+name+"? This will delete their Firebase login and mentorship access. This cannot be undone."))return;
@@ -102,7 +122,12 @@ remove.className="danger";
 remove.textContent="Remove Student";
 remove.title="Permanently delete this student's Firebase login and portal access";
 remove.onclick=()=>deleteStudent(s.uid,s.name||s.uid,remove);
-controls.append(toggle,rename,reset,remove);
+const passwordReset=document.createElement("button");
+passwordReset.className="secondary";
+passwordReset.textContent="Reset Password";
+passwordReset.title="Send a Firebase password reset email to this student";
+passwordReset.onclick=()=>sendStudentPasswordReset(s.uid,s.name||s.uid,passwordReset);
+controls.append(toggle,rename,reset,passwordReset,remove);
 item.append(top,uid,device,controls);root.append(item)}if(!root.children.length){const empty=document.createElement("p");empty.className="muted";empty.textContent="No matching students.";root.append(empty)}}
 $("search").addEventListener("input",render);
 $("courseSearch").addEventListener("input",renderCourses);
