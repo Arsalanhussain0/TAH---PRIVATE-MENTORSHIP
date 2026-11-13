@@ -1,3 +1,4 @@
+const {enforceRateLimit}=require("../lib/rate-limit");
 // TAH server-side device binding. Requires FIREBASE_SERVICE_ACCOUNT_JSON in Vercel.
 const crypto = require("node:crypto");
 const admin = require("firebase-admin");
@@ -19,6 +20,7 @@ module.exports = async function handler(req,res) {
   try { user=await admin.auth().verifyIdToken(idToken,true); }
   catch { return reply(res,401,{error:"invalid_session"}); }
   const db=admin.firestore();
+  if(!await enforceRateLimit(db,user.uid,action==="reset"?"device_reset":action==="claim"?"device_claim":"device_verify",res))return;
   if (action==="reset") {
     const a=await db.doc("admins/"+user.uid).get();
     if (!a.exists || a.data().active!==true) return reply(res,403,{error:"admin_required"});
