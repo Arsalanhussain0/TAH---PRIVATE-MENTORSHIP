@@ -1,3 +1,4 @@
+const {enforceRateLimit}=require("../lib/rate-limit");
 const crypto=require("node:crypto");
 const admin=require("firebase-admin");
 if(!admin.apps.length&&process.env.FIREBASE_SERVICE_ACCOUNT_JSON){
@@ -20,6 +21,7 @@ module.exports=async(req,res)=>{
     !/[a-z]/.test(password)||!/[A-Z]/.test(password)||!/[0-9]/.test(password))
    return send(res,400,{error:"password_needs_12_chars_upper_lower_number"});
  const db=admin.firestore(),ref=db.doc("Students/"+user.uid);
+ if(!await enforceRateLimit(db,user.uid,"change_first_password",res))return;
  try{
   const snap=await ref.get(),record=snap.data();
   if(!snap.exists||record.active!==true||record.role!=="student")return send(res,403,{error:"student_not_approved"});
