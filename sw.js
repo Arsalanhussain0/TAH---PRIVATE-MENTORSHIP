@@ -1,140 +1,29 @@
-
-// TAH Portal Service Worker
-// Cache version: Update this whenever you publish a new release.
-
-const CACHE_PREFIX = 'tah-portal-';
-const CACHE_VERSION = 'v2';
-const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
-
-// Portal files
-const APP_FILES = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
-];
-
-// INSTALL
-self.addEventListener('install', (event) => {
+// TAH Portal PWA: cache only public icons/manifest, never auth pages or API data.
+const CACHE_NAME = "tah-public-v3";
+const PUBLIC_ASSETS = ["/manifest.json", "/icon-192.png", "/icon-512.png"];
+self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-
-    await Promise.all(
-      APP_FILES.map(async (file) => {
-        try {
-          const url = new URL(file, self.registration.scope);
-          const response = await fetch(url, {
-            cache: 'reload'
-          });
-
-          if (response.ok && response.type === 'basic') {
-            await cache.put(url, response);
-          }
-        } catch (error) {
-          console.warn('TAH Cache Error:', file, error);
-        }
-      })
-    );
-
+    await Promise.all(PUBLIC_ASSETS.map(async path => {
+      try { const response = await fetch(path, {cache:"reload"}); if(response.ok) await cache.put(path,response); } catch(e) {}
+    }));
     await self.skipWaiting();
   })());
 });
-
-// ACTIVATE
-self.addEventListener('activate', (event) => {
+self.addEventListener("activate", event => {
   event.waitUntil((async () => {
-    const cacheNames = await caches.keys();
-
-    await Promise.all(
-      cacheNames.map((name) => {
-        if (
-          name.startsWith(CACHE_PREFIX) &&
-          name !== CACHE_NAME
-        ) {
-          return caches.delete(name);
-        }
-      })
-    );
-
+    const names = await caches.keys();
+    await Promise.all(names.filter(name => name !== CACHE_NAME).map(name => caches.delete(name)));
     await self.clients.claim();
   })());
 });
-
-// FETCH
-// Always try the latest online version first.
-// Use cached files only when offline.
-
-self.addEventListener('fetch', (event) => {
-  const request = event.request;
-
-  if (request.method !== 'GET') return;
-
-  // Do not interfere with video streaming.
-  if (request.headers.has('range')) return;
-
-  const url = new URL(request.url);
-
-  // Ignore external websites and video providers.
-  if (url.origin !== self.location.origin) return;
-
-  const isNavigation = request.mode === 'navigate';
-
-  const isStaticFile = [
-    'style',
-    'script',
-    'image',
-    'font',
-    'manifest'
-  ].includes(request.destination);
-
-  const isAppFile = APP_FILES.some((file) => {
-    return new URL(file, self.registration.scope).pathname === url.pathname;
-  });
-
-  if (!isNavigation && !isStaticFile && !isAppFile) return;
-
+self.addEventListener("fetch", event => {
+  const req = event.request;
+  if (req.method !== "GET" || req.headers.has("range")) return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin || !PUBLIC_ASSETS.includes(url.pathname)) return;
   event.respondWith((async () => {
-    const cache = await caches.open(CACHE_NAME);
-
-    try {
-      const response = await fetch(request);
-
-      if (
-        response &&
-        response.ok &&
-        response.type === 'basic'
-      ) {
-        await cache.put(request, response.clone());
-      }
-
-      return response;
-
-    } catch (error) {
-      const cachedResponse = await cache.match(request);
-
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      // Offline fallback
-      if (isNavigation) {
-        const offlinePage = await cache.match(
-          new URL('./index.html', self.registration.scope).href
-        );
-
-        if (offlinePage) return offlinePage;
-      }
-
-      return new Response(
-        'You are offline. Please check your internet connection.',
-        {
-          status: 503,
-          headers: {
-            'Content-Type': 'text/plain; charset=utf-8'
-          }
-        }
-      );
-    }
+    try { const response = await fetch(req); if(response.ok) (await caches.open(CACHE_NAME)).put(req,response.clone()); return response; }
+    catch(e) { return (await caches.match(req)) || Response.error(); }
   })());
 });
