@@ -1,3 +1,4 @@
+const {enforceRateLimit}=require("../lib/rate-limit");
 // Admin-only lookup of a student's Firebase Authentication email.
 // The browser uses Firebase's standard password reset email delivery.
 const admin=require("firebase-admin");
@@ -18,6 +19,7 @@ module.exports=async(req,res)=>{
  if(typeof uid!=="string"||!/^[A-Za-z0-9_-]{15,128}$/.test(uid))return send(res,400,{error:"invalid_student_uid"});
  try{
   const db=admin.firestore();
+  if(!await enforceRateLimit(db,caller.uid,"student_reset_email",res))return;
   const adminSnap=await db.doc("admins/"+caller.uid).get();
   if(!adminSnap.exists||adminSnap.data().active!==true)return send(res,403,{error:"admin_required"});
   const studentSnap=await db.doc("Students/"+uid).get();
