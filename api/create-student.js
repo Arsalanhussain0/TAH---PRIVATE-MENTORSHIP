@@ -1,3 +1,4 @@
+const {enforceRateLimit}=require("../lib/rate-limit");
 // Admin-only student provisioning. Never expose service account credentials to the browser.
 const crypto = require("node:crypto");
 const admin = require("firebase-admin");
@@ -17,6 +18,7 @@ module.exports=async function handler(req,res){
   catch{return send(res,401,{error:"invalid_session"})}
   try{
     const db=admin.firestore();
+    if(!await enforceRateLimit(db,caller.uid,"create_student",res))return;
     const adminSnap=await db.doc("admins/"+caller.uid).get();
     if(!adminSnap.exists||adminSnap.data().active!==true)return send(res,403,{error:"admin_required"});
     const {name,email}=req.body||{};
