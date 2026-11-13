@@ -17,3 +17,19 @@ jobs:
           node-version: '22'
       - name: Run isolated security tests (no Firebase credentials)
         run: node --test tests/security.test.cjs
+  firestore-rules-emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated test dependencies
+        run: npm install --no-save firebase@^11 @firebase/rules-unit-testing@^4
+      - name: Run Firestore security rules emulator tests
+        run: npx --yes firebase-tools@15 emulators:exec --only firestore --project tah-security-emulator "node --test tests/firestore-rules.test.cjs"
