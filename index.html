@@ -505,6 +505,9 @@
     const fsToggleBtn = document.getElementById('fs-toggle-btn');
     const backToLecBtn = document.getElementById('back-to-lec-btn');
 
+    // Initialize player state before the first showScreen() call.
+    let playbackRequestNumber = 0;
+    let previewWatermarkTimer = null;
     // Firebase controls sessions; old localStorage credentials are ignored.
     localStorage.removeItem("tah_logged_user");
     localStorage.removeItem("tah_students_hash");
@@ -689,7 +692,6 @@
       showScreen(lecturesListScreen);
     }
 
-    let playbackRequestNumber = 0;
     async function playSelectedVideo(title, moduleIndex, lectureIndex) {
       if (!approvedUid || auth.currentUser?.uid !== approvedUid) return;
       const lecture = batch1Nodes[moduleIndex]?.lectures?.[lectureIndex];
@@ -774,7 +776,6 @@
       }
     }
 
-    let previewWatermarkTimer = null;
     function stopPreviewWatermark() {
       if (previewWatermarkTimer !== null) clearInterval(previewWatermarkTimer);
       previewWatermarkTimer = null;
