@@ -547,6 +547,7 @@
             batch1Nodes = modules.map(node => ({
               title: String(node.title || "Untitled module"),
               lectures: Array.isArray(node.lectures) ? node.lectures.map(lecture => ({
+                id: String(lecture.id || ""),
                 title: String(lecture.title || "Untitled lecture"),
                 releaseMode: lecture.releaseMode === "unlocked" || !lecture.releaseMode ? "unlocked" : "locked",
                 releaseAt: lecture.releaseAt || "",
@@ -661,13 +662,13 @@
       moduleTitleHeading.innerText = selectedNode.title;
       lecturesContainer.innerHTML = "";
 
-      selectedNode.lectures.forEach((lec) => {
+      selectedNode.lectures.forEach((lec, lectureIndex) => {
         const item = document.createElement('div');
         item.className = 'list-item';
         const released = isReleased(lec);
         item.onclick = () => {
           if (!isReleased(lec)) { alert(releaseLabel(lec)); return; }
-          playSelectedVideo(lec.title, lec.videoId);
+          playSelectedVideo(lec.title, nodeIndex, lectureIndex);
         };
         const left = document.createElement("div");
         left.style.cssText = "display:flex;align-items:center;gap:10px";
@@ -686,13 +687,64 @@
       showScreen(lecturesListScreen);
     }
 
-    function playSelectedVideo(title, vidId) {
+    let playbackRequestNumber = 0;
+    async function playSelectedVideo(title, moduleIndex, lectureIndex) {
       if (!approvedUid || auth.currentUser?.uid !== approvedUid) return;
-      if (!vidId || vidId === "YAHAN VIDEO ID AYGI") { alert("Lecture video is not uploaded yet."); return; }
-      currentPlayingTitle.innerText = title;
-      iframeContainer.innerHTML = `<iframe src="https://iframe.mediadelivery.net/embed/803385/${vidId}?autoplay=true&loop=false&muted=false&preload=true" referrerpolicy="no-referrer-when-downgrade" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="false"></iframe>`;
+      const lecture = batch1Nodes[moduleIndex]?.lectures?.[lectureIndex];
+      if (!lecture || !isReleased(lecture)) return;
+      const requestNumber = ++playbackRequestNumber;
+      currentPlayingTitle.textContent = title;
       showScreen(videoPlayerScreen);
-      initWatermark(currentUserEmail);
+      iframeContainer.replaceChildren();
+      const status = document.createElement("p");
+      status.style.cssText = "position:absolute;inset:0;display:grid;place-items:center;padding:22px;text-align:center;color:#cbd5e1";
+      status.textContent = "Verifying secure video access...";
+      iframeContainer.append(status);
+      try {
+        const user = auth.currentUser;
+        const response = await fetch("/api/playback", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          cache:"no-store",
+          body:JSON.stringify({
+            idToken:await user.getIdToken(),
+            deviceSecret:deviceToken(),
+            moduleIndex,lectureIndex
+          })
+        });
+        const result = await response.json().catch(()=>({}));
+        if (requestNumber !== playbackRequestNumber || approvedUid !== user.uid ||
+            auth.currentUser?.uid !== user.uid || videoPlayerScreen.classList.contains("hidden")) return;
+        if (!response.ok || !result.otp || !result.playbackInfo) {
+          const messages = {
+            video_not_uploaded:"This lecture video has not been uploaded yet.",
+            video_service_not_configured:"Secure video service is not activated yet.",
+            lecture_locked:"This lecture is currently locked.",
+            device_not_authorized:"This browser is not the registered device. Contact admin.",
+            student_not_approved:"Your mentorship access is not active.",
+            playback_unavailable:"Video is temporarily unavailable. Please try again.",
+            video_provider_unavailable:"Video provider is temporarily unavailable."
+          };
+          status.textContent = messages[result.error] || "Secure video unavailable. Please try again later.";
+          return;
+        }
+        const iframe = document.createElement("iframe");
+        const url = new URL("https://player.vdocipher.com/v2/");
+        url.searchParams.set("otp",result.otp);
+        url.searchParams.set("playbackInfo",result.playbackInfo);
+        iframe.src = url.toString();
+        iframe.title = title;
+        iframe.referrerPolicy = "strict-origin-when-cross-origin";
+        iframe.allow = "encrypted-media; autoplay; fullscreen; picture-in-picture";
+        iframe.setAttribute("allowfullscreen","");
+        iframe.style.cssText = "border:0;position:absolute;inset:0;width:100%;height:100%";
+        iframeContainer.replaceChildren(iframe);
+        // Provider-side watermark is applied by backend OTP annotation.
+        watermarkOverlay.textContent = "";
+      } catch (error) {
+        if (requestNumber === playbackRequestNumber) status.textContent =
+          "Cannot connect to secure video service. Please try again later.";
+      }
     }
 
     function goBackFromVideo() {
