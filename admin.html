@@ -11,7 +11,7 @@ header{padding:14px 0 20px;border-bottom:1px solid #1e3a65}
 h1{font-size:clamp(25px,3vw,36px);letter-spacing:.3px;background:linear-gradient(90deg,#dbeafe,#60a5fa,#2563eb);-webkit-background-clip:text;background-clip:text;color:transparent}
 .panel{background:linear-gradient(145deg,#101b30,#0b1221);border-color:#263e67;box-shadow:0 14px 40px #0004}
 button{transition:background .15s,transform .15s}button:active{transform:scale(.98)}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
-.admin-tabs{display:flex;gap:10px;margin:24px 0 6px;padding:7px;background:#0d1627;border:1px solid #253b60;border-radius:14px;max-width:540px}
+.admin-tabs{display:flex;gap:10px;margin:24px 0 6px;padding:7px;background:#0d1627;border:1px solid #253b60;border-radius:14px;max-width:720px}
 .admin-tab{flex:1;background:transparent;color:#9fb7d8;border:1px solid transparent;font-size:14px}
 .admin-tab[aria-selected="true"]{background:linear-gradient(110deg,#1d4ed8,#2563eb);color:#fff;box-shadow:0 5px 20px #2563eb45}
 .admin-view[hidden]{display:none!important}
@@ -25,10 +25,10 @@ button{transition:background .15s,transform .15s}button:active{transform:scale(.
 <section id="loginPanel" class="panel"><h2>Admin Sign In</h2><p class="muted">Use your Firebase admin email and password.</p><form id="loginForm" class="row"><input id="email" type="email" placeholder="Admin email" autocomplete="username" required><input id="password" type="password" placeholder="Password" autocomplete="current-password" required><button id="loginBtn">Sign In</button></form><p id="loginMsg" class="msg" role="status"></p></section>
 <nav id="adminNav" class="admin-tabs hidden" aria-label="Admin sections" role="tablist">
 <button type="button" class="admin-tab" id="studentsTab" role="tab" aria-selected="true" aria-controls="dashboard">👥 Students</button>
-<button type="button" class="admin-tab" id="coursesTab" role="tab" aria-selected="false" aria-controls="coursesPanel">📚 Courses</button>
+<button type="button" class="admin-tab" id="coursesTab" role="tab" aria-selected="false" aria-controls="coursesPanel">📚 Courses</button><button type="button" class="admin-tab" id="videosTab" role="tab" aria-selected="false" aria-controls="videosPanel">🎬 Videos</button>
 </nav><section id="dashboard" class="admin-view hidden" role="tabpanel" aria-labelledby="studentsTab"><div class="panel"><div class="row spread"><h2>Student Management</h2><span id="identity" class="muted small"></span></div><p class="muted">Students are created in Firebase Authentication first. Copy their UID, then approve them here. This dashboard cannot create Authentication passwords on the free client SDK.</p><div class="stats"><div><strong id="total">0</strong><p class="muted">Students</p></div><div><strong id="active">0</strong><p class="muted">Active</p></div></div></div>
 <div class="panel"><h2>Approve New Student</h2><form id="addForm"><div class="row"><input id="uid" placeholder="Firebase Authentication UID" required minlength="15" maxlength="128"><input id="name" placeholder="Student name" required maxlength="100"></div><div class="row" style="margin-top:12px"><button id="addBtn">Approve Student</button></div></form><p id="addMsg" class="msg" role="status"></p></div>
-<div class="panel"><div class="row spread"><h2>Students</h2><input id="search" placeholder="Search name or UID" aria-label="Search students"></div><div id="students"></div><p id="listMsg" class="msg" role="status"></p></div></section><section id="coursesPanel" class="panel admin-view hidden" role="tabpanel" aria-labelledby="coursesTab"><h2>Course Management — Batch 1</h2><p class="muted">Manage 11 modules and lecture titles. Video IDs are deliberately not stored here until the protected VdoCipher backend is ready.</p><div class="course-tools"><button id="seedCourses">Initialize 11 Modules</button><button id="addModule" class="secondary">Add Module</button><input id="courseSearch" type="search" placeholder="Search modules or lectures" aria-label="Search course modules"></div><p id="courseMsg" class="msg" role="status"></p><div id="courseList"></div></section></main>
+<div class="panel"><div class="row spread"><h2>Students</h2><input id="search" placeholder="Search name or UID" aria-label="Search students"></div><div id="students"></div><p id="listMsg" class="msg" role="status"></p></div></section><section id="coursesPanel" class="panel admin-view hidden" role="tabpanel" aria-labelledby="coursesTab"><h2>Course Management — Batch 1</h2><p class="muted">Manage 11 modules and lecture titles. Video IDs are deliberately not stored here until the protected VdoCipher backend is ready.</p><div class="course-tools"><button id="seedCourses">Initialize 11 Modules</button><button id="addModule" class="secondary">Add Module</button><input id="courseSearch" type="search" placeholder="Search modules or lectures" aria-label="Search course modules"></div><p id="courseMsg" class="msg" role="status"></p><div id="courseList"></div></section><section id="videosPanel" class="panel admin-view hidden" role="tabpanel" aria-labelledby="videosTab"><h2>Secure Video Management — Batch 1</h2><p class="muted">Prepare secure VdoCipher video links without exposing video IDs in the student catalog. No subscription is needed to prepare this dashboard.</p><button id="prepareVideoIds">Prepare Stable Lecture IDs</button><button id="refreshVideos" class="secondary">Refresh Video Status</button><p id="videoMsg" class="msg" role="status"></p><div id="videoList"></div></section></main>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
@@ -37,21 +37,23 @@ const app=initializeApp({apiKey:"AIzaSyBLigEA-dRyj0goB3GkpA_TZbRToSMUyRk",authDo
 const auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
 let unsubscribe=null,unsubscribeCourses=null,students=[],adminUid=null,catalog=null;
 function showTab(tab){
-  const course=tab==="courses";
-  $("dashboard").classList.toggle("hidden",course);
+  const course=tab==="courses",video=tab==="videos";
+  $("dashboard").classList.toggle("hidden",course||video);
   $("coursesPanel").classList.toggle("hidden",!course);
-  $("studentsTab").setAttribute("aria-selected",String(!course));
-  $("coursesTab").setAttribute("aria-selected",String(course));
-  sessionStorage.setItem("tahAdminTab",course?"courses":"students");
+  $("videosPanel").classList.toggle("hidden",!video);
+  for(const [id,selected] of [["studentsTab",!course&&!video],["coursesTab",course],["videosTab",video]])$(id).setAttribute("aria-selected",String(selected));
+  sessionStorage.setItem("tahAdminTab",tab);
+  if(video)loadVideoStatus();
 }
 $("studentsTab").onclick=()=>showTab("students");
 $("coursesTab").onclick=()=>showTab("courses");
+$("videosTab").onclick=()=>showTab("videos");
 const starterModules=[{"title":"TAH NODE 1: (Liquidity & Inefficiency)","lectures":[{"title":"LEC 1: Introduction to TAH - The Apex House","videoId":""},{"title":"LEC 2: ICT Volume Imbalance","videoId":""}]},{"title":"TAH NODE 2: (Dealing Range Theory)","lectures":[{"title":"LEC 1: Introduction to Dealing Ranges","videoId":""},{"title":"LEC 2: Premium & Discount Arrays","videoId":""}]},{"title":"TAH NODE 3: (FVG Types & Techniques)","lectures":[{"title":"LEC 1: Fair Value Gap Identification","videoId":""},{"title":"LEC 2: Advanced FVG Rebalancing Strategies","videoId":""}]},{"title":"TAH NODE 4: (ICT Block Theory & MSS)","lectures":[{"title":"LEC 1: Order Blocks & Breaker Blocks","videoId":""},{"title":"LEC 2: Market Structure Shift (MSS)","videoId":""}]},{"title":"TAH NODE 5: (ICT Bonus PD Arrays)","lectures":[{"title":"LEC 1: Mitigation Blocks & Rejection Blocks","videoId":""},{"title":"LEC 2: Liquidity Voids & Propulsion Blocks","videoId":""}]},{"title":"TAH NODE 6: (ICT Swing Theory)","lectures":[{"title":"LEC 1: Swing Highs & Swing Lows Setup","videoId":""},{"title":"LEC 2: Internal vs External Range Liquidity","videoId":""}]},{"title":"TAH NODE 7: (Intraday Architecture)","lectures":[{"title":"LEC 1: Session Openings & Key Levels","videoId":""},{"title":"LEC 2: Intraday Price Delivery Framework","videoId":""}]},{"title":"TAH NODE 8: (ICT Time & Price Theory)","lectures":[{"title":"LEC 1: Timing Daily Market Cycles","videoId":""},{"title":"LEC 2: Killzones & Opening Ranges","videoId":""}]},{"title":"TAH NODE 9: (ICT Power of 3 - Classic Buy/Sell Day)","lectures":[{"title":"LEC 1: Accumulation, Manipulation & Distribution (AMD)","videoId":""},{"title":"LEC 2: Identifying Classic Buy & Sell Days","videoId":""}]},{"title":"TAH NODE 10: (ICT Trading Models)","lectures":[{"title":"LEC 1: Core Algorithmic Model Walkthrough","videoId":""},{"title":"LEC 2: Execution Checklist & Rules","videoId":""}]},{"title":"TAH NODE 11: (IMPERIUM X - Risk Management)","lectures":[{"title":"LEC 1: Capital Preservation & Lot Sizing","videoId":""},{"title":"LEC 2: Trader Psychology & Risk Discipline","videoId":""}]}];
 function msg(id,text){$(id).textContent=text}
-function lock(){adminUid=null;if(unsubscribeCourses){unsubscribeCourses();unsubscribeCourses=null}catalog=null;$("adminNav").classList.add("hidden");$("coursesPanel").classList.add("hidden");if(unsubscribe){unsubscribe();unsubscribe=null}students=[];$("dashboard").classList.add("hidden");$("loginPanel").classList.remove("hidden");$("logout").classList.add("hidden")}
+function lock(){adminUid=null;if(unsubscribeCourses){unsubscribeCourses();unsubscribeCourses=null}catalog=null;$("adminNav").classList.add("hidden");$("coursesPanel").classList.add("hidden");$("videosPanel").classList.add("hidden");if(unsubscribe){unsubscribe();unsubscribe=null}students=[];$("dashboard").classList.add("hidden");$("loginPanel").classList.remove("hidden");$("logout").classList.add("hidden")}
 $("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginBtn").disabled=true;msg("loginMsg","Signing in...");try{await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value);$("password").value=""}catch(e){msg("loginMsg","Login failed. Check your credentials.")}finally{$("loginBtn").disabled=false}});
 $("logout").onclick=()=>signOut(auth);
-onAuthStateChanged(auth,async user=>{lock();if(!user)return;try{const a=await getDoc(doc(db,"admins",user.uid));if(!a.exists()||a.data().active!==true){msg("loginMsg","This account is not an approved admin. Create admins/{your UID} with active: true in Firestore Console.");return}adminUid=user.uid;$("adminNav").classList.remove("hidden");listenCourses();$("loginPanel").classList.add("hidden");showTab(sessionStorage.getItem("tahAdminTab")==="courses"?"courses":"students");$("logout").classList.remove("hidden");$("identity").textContent=user.email||user.uid;msg("loginMsg","");unsubscribe=onSnapshot(collection(db,"Students"),snap=>{students=snap.docs.map(d=>({uid:d.id,...d.data()}));render()},e=>msg("listMsg","Could not load students. Check Firestore rules: "+e.code))}catch(e){msg("loginMsg","Admin permission check failed: "+e.code)}});
+onAuthStateChanged(auth,async user=>{lock();if(!user)return;try{const a=await getDoc(doc(db,"admins",user.uid));if(!a.exists()||a.data().active!==true){msg("loginMsg","This account is not an approved admin. Create admins/{your UID} with active: true in Firestore Console.");return}adminUid=user.uid;$("adminNav").classList.remove("hidden");listenCourses();$("loginPanel").classList.add("hidden");showTab(["courses","videos"].includes(sessionStorage.getItem("tahAdminTab"))?sessionStorage.getItem("tahAdminTab"):"students");$("logout").classList.remove("hidden");$("identity").textContent=user.email||user.uid;msg("loginMsg","");unsubscribe=onSnapshot(collection(db,"Students"),snap=>{students=snap.docs.map(d=>({uid:d.id,...d.data()}));render()},e=>msg("listMsg","Could not load students. Check Firestore rules: "+e.code))}catch(e){msg("loginMsg","Admin permission check failed: "+e.code)}});
 async function resetStudentDevice(uid, button){
   if(!adminUid || !confirm("Reset registered device for this student? Their current browser will lose access, and the next approved login can claim a device."))return;
   button.disabled=true;
@@ -84,7 +86,7 @@ $("addForm").addEventListener("submit",async e=>{e.preventDefault();if(!adminUid
 function listenCourses(){
   unsubscribeCourses=onSnapshot(doc(db,"courseCatalog","batch1"),snap=>{
     catalog=snap.exists()?snap.data():null;
-    renderCourses();
+    renderCourses();renderVideoList();
   },err=>msg("courseMsg","Course catalog error: "+err.code));
 }
 function renderCourses(){
@@ -99,7 +101,7 @@ function renderCourses(){
     const title=document.createElement("strong");title.textContent=(i+1)+". "+module.title;
     const buttons=document.createElement("div");buttons.className="row";buttons.style.marginTop="9px";
     const rename=document.createElement("button");rename.className="secondary";rename.textContent="Rename Module";rename.onclick=()=>editCatalog(async nodes=>{const v=prompt("Module title:",nodes[i].title);if(v===null||!v.trim())return false;nodes[i].title=v.trim().slice(0,160)});
-    const add=document.createElement("button");add.textContent="Add Lecture";add.onclick=()=>editCatalog(async nodes=>{const v=prompt("New lecture title:");if(!v?.trim())return false;nodes[i].lectures.push({title:v.trim().slice(0,160),videoId:"",releaseMode:"locked",releaseAt:""})});
+    const add=document.createElement("button");add.textContent="Add Lecture";add.onclick=()=>editCatalog(async nodes=>{const v=prompt("New lecture title:");if(!v?.trim())return false;nodes[i].lectures.push({id:crypto.randomUUID(),title:v.trim().slice(0,160),videoId:"",releaseMode:"locked",releaseAt:""})});
     buttons.append(rename,add);section.append(title,buttons);
     (module.lectures||[]).forEach((lec,j)=>{
       const row=document.createElement("div");row.className="row";row.style.marginTop="10px";
@@ -135,6 +137,7 @@ $("seedCourses").onclick=async()=>{
   $("seedCourses").disabled=true;
   try{
     const ref=doc(db,"courseCatalog","batch1");
+    starterModules.forEach(m=>m.lectures.forEach(l=>{l.id=crypto.randomUUID()}));
     if((await getDoc(ref)).exists()){msg("courseMsg","Already initialized.");return}
     await setDoc(ref,{modules:starterModules});
     msg("courseMsg","Initial modules saved.");
@@ -146,4 +149,75 @@ $("addModule").onclick=()=>editCatalog(async nodes=>{
   nodes.push({title:v.trim().slice(0,160),lectures:[]});
 });
 
+
+let linkedVideoIds=new Set();
+async function videoApi(method,body){
+ const token=await auth.currentUser.getIdToken();
+ const response=await fetch("/api/admin-videos",{
+  method,headers:{"Authorization":"Bearer "+token,...(body?{"Content-Type":"application/json"}:{})},
+  cache:"no-store",...(body?{body:JSON.stringify(body)}:{})
+ });
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error(data.error||"service_unavailable");
+ return data;
+}
+async function loadVideoStatus(){
+ if(!adminUid)return;
+ try{
+  const result=await videoApi("GET");
+  linkedVideoIds=new Set(result.videos||[]);
+  msg("videoMsg","Video mapping service connected. IDs remain server-side.");
+ }catch(e){linkedVideoIds=new Set();msg("videoMsg","Video mapping unavailable: "+e.message+". Check Vercel backend configuration.")}
+ renderVideoList();
+}
+$("refreshVideos").onclick=loadVideoStatus;
+$("prepareVideoIds").onclick=async()=>{
+ if(!adminUid||!catalog)return msg("videoMsg","Course catalog is not loaded.");
+ const missing=catalog.modules.reduce((n,m)=>n+(m.lectures||[]).filter(l=>!l.id).length,0);
+ if(!missing)return msg("videoMsg","All lectures already have stable IDs.");
+ if(!confirm("Assign stable IDs to "+missing+" existing lectures? Titles and lock settings will stay unchanged."))return;
+ $("prepareVideoIds").disabled=true;
+ try{
+  const modules=structuredClone(catalog.modules);
+  modules.forEach(m=>(m.lectures||[]).forEach(l=>{if(!l.id)l.id=crypto.randomUUID()}));
+  await updateDoc(doc(db,"courseCatalog","batch1"),{modules});
+  msg("videoMsg","Stable lecture IDs saved. You can now attach video IDs.");
+ }catch(e){msg("videoMsg","Could not prepare IDs: "+e.message)}
+ finally{$("prepareVideoIds").disabled=false}
+};
+function renderVideoList(){
+ const root=$("videoList");if(!root)return;root.replaceChildren();
+ if(!catalog)return;
+ const missing=catalog.modules.some(m=>(m.lectures||[]).some(l=>!l.id));
+ $("prepareVideoIds").disabled=!missing;
+ if(missing){const p=document.createElement("p");p.className="muted";p.textContent="First click Prepare Stable Lecture IDs to enable secure mapping.";root.append(p)}
+ catalog.modules.forEach((module,i)=>{
+  const section=document.createElement("div");section.className="student";
+  const heading=document.createElement("strong");heading.textContent=module.title;section.append(heading);
+  (module.lectures||[]).forEach(lecture=>{
+   const row=document.createElement("div");row.className="row";row.style.marginTop="12px";
+   const name=document.createElement("span");name.className="muted";name.style.flex="1";name.textContent=lecture.title;
+   const status=document.createElement("span");status.className="pill "+(linkedVideoIds.has(lecture.id)?"on":"off");
+   status.textContent=linkedVideoIds.has(lecture.id)?"Video linked":"Not linked";
+   const link=document.createElement("button");link.className="secondary";
+   link.textContent="Set Video ID";link.disabled=!lecture.id;
+   link.onclick=async()=>{
+    const value=prompt("Enter VdoCipher Video ID for: "+lecture.title+"\nLeave blank to remove existing mapping. Never paste API secret.");
+    if(value===null)return;
+    const videoId=value.trim();
+    if(videoId&&!/^[A-Za-z0-9_-]{8,64}$/.test(videoId))return msg("videoMsg","Invalid video ID format.");
+    if(!videoId&&!confirm("Remove video mapping for this lecture?"))return;
+    link.disabled=true;
+    try{
+     await videoApi("POST",{lectureId:lecture.id,videoId});
+     if(videoId)linkedVideoIds.add(lecture.id);else linkedVideoIds.delete(lecture.id);
+     msg("videoMsg","Video mapping saved securely for "+lecture.title);
+     renderVideoList();
+    }catch(e){msg("videoMsg","Could not save video: "+e.message);link.disabled=false}
+   };
+   row.append(name,status,link);section.append(row);
+  });
+  root.append(section);
+ });
+}
 </script></body></html>
