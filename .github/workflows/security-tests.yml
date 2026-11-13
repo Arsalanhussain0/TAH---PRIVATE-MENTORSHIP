@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: '22'
       - name: Run isolated security tests (no Firebase credentials)
-        run: node --test tests/security.test.cjs
+        run: node --test tests/security.test.cjs tests/rate-limit.test.cjs
   firestore-rules-emulator:
     runs-on: ubuntu-latest
     timeout-minutes: 10
