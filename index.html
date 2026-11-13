@@ -317,7 +317,15 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+    const app = initializeApp({apiKey:"AIzaSyBLigEA-dRyj0goB3GkpA_TZbRToSMUyRk",authDomain:"tah-portal-36520.firebaseapp.com",projectId:"tah-portal-36520",storageBucket:"tah-portal-36520.firebasestorage.app",messagingSenderId:"1001287399874",appId:"1:1001287399874:web:cc789509a4d6b7b349fe5b",measurementId:"G-J4SPWKGGBD"});
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    let unsubscribeStudent = null;
+    let approvedUid = null;
     // Register the updated Service Worker normally.
     // updateViaCache:'none' asks the browser to revalidate sw.js instead of
     // relying on a stale cached worker script.
@@ -334,19 +342,6 @@
         }
       });
     }
-
-    // Student credentials: update this list when adding/removing students.
-    const validStudents = {
-      "arsalan1@gmail.com": "arsalan123",
-      "muqaddas2@gmail.com": "muqaddas123"
-    };
-
-    // Change AUTH_VERSION to force every existing student to log in again.
-    // A credential-list/password change also invalidates old sessions automatically.
-    const AUTH_VERSION = "TAH-AUTH-2026-11-12-2";
-    const currentStudentsHash = btoa(
-      AUTH_VERSION + "|" + JSON.stringify(validStudents)
-    );
 
     const batch1Nodes = [
       {
@@ -448,55 +443,42 @@
     const fsToggleBtn = document.getElementById('fs-toggle-btn');
     const backToLecBtn = document.getElementById('back-to-lec-btn');
 
-    function clearSavedLogin() {
-      localStorage.removeItem("tah_logged_user");
+    // Firebase controls sessions; old localStorage credentials are ignored.
+    localStorage.removeItem("tah_logged_user");
+    localStorage.removeItem("tah_students_hash");
+    showScreen(loginScreen);
+    onAuthStateChanged(auth, async (user) => {
+      if (unsubscribeStudent) { unsubscribeStudent(); unsubscribeStudent = null; }
+      approvedUid = null;
       currentUserEmail = "";
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      const savedHash = localStorage.getItem("tah_students_hash") || "";
-      const savedEmail = (localStorage.getItem("tah_logged_user") || "").trim().toLowerCase();
-
-      // If the student list/passwords or AUTH_VERSION changed, log out old sessions.
-      if (savedHash !== currentStudentsHash) {
-        clearSavedLogin();
-      } else if (
-        savedEmail &&
-        !Object.prototype.hasOwnProperty.call(validStudents, savedEmail)
-      ) {
-        clearSavedLogin();
-      } else {
-        currentUserEmail = savedEmail;
-      }
-
-      // Save the current authentication signature for the next visit.
-      localStorage.setItem("tah_students_hash", currentStudentsHash);
-
-      if (
-        currentUserEmail &&
-        Object.prototype.hasOwnProperty.call(validStudents, currentUserEmail)
-      ) {
-        document.getElementById('user-display').innerText = currentUserEmail;
-        showScreen(coursesScreen);
-        initSecurity();
-      } else {
-        showScreen(loginScreen);
-      }
-    });
-
-    // Keep other open tabs in sync when a login is cleared or credentials change.
-    window.addEventListener('storage', (event) => {
-      if (event.key === "tah_logged_user" && !event.newValue) {
-        currentUserEmail = "";
+      iframeContainer.innerHTML = "";
+      showScreen(loginScreen);
+      if (!user) return;
+      unsubscribeStudent = onSnapshot(doc(db, "Students", user.uid), async (snapshot) => {
+        if (auth.currentUser?.uid !== user.uid) return;
+        const record = snapshot.data();
+        if (!snapshot.exists() || record.active !== true || record.role !== "student") {
+          approvedUid = null;
+          currentUserEmail = "";
+          iframeContainer.innerHTML = "";
+          showScreen(loginScreen);
+          document.getElementById("error-msg").textContent = "Your mentorship access is not approved or has been disabled.";
+          document.getElementById("error-msg").style.display = "block";
+          return;
+        }
+        approvedUid = user.uid;
+        currentUserEmail = user.email || "";
+        document.getElementById("user-display").textContent = currentUserEmail;
+        document.getElementById("error-msg").style.display = "none";
+        if (loginScreen.classList.contains("hidden") === false) showScreen(coursesScreen);
+      }, (error) => {
+        approvedUid = null;
         iframeContainer.innerHTML = "";
         showScreen(loginScreen);
-      }
-
-      if (event.key === "tah_students_hash" && event.newValue !== currentStudentsHash) {
-        clearSavedLogin();
-        iframeContainer.innerHTML = "";
-        showScreen(loginScreen);
-      }
+        document.getElementById("error-msg").textContent = "Cannot verify access. Check Firestore rules and internet connection.";
+        document.getElementById("error-msg").style.display = "block";
+        console.error("Student access check failed", error.code);
+      });
     });
 
     function showScreen(screenToShow) {
@@ -510,41 +492,43 @@
       }
     }
 
-    loginForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-
-      const email = document.getElementById('email-input').value.trim().toLowerCase();
-      const password = document.getElementById('password-input').value;
-      const errorMessage = document.getElementById('error-msg');
-
-      if (
-        Object.prototype.hasOwnProperty.call(validStudents, email) &&
-        validStudents[email] === password
-      ) {
-        currentUserEmail = email;
-        localStorage.setItem("tah_logged_user", email);
-        localStorage.setItem("tah_students_hash", currentStudentsHash);
-
-        errorMessage.style.display = 'none';
-        document.getElementById('user-display').innerText = email;
-        showScreen(coursesScreen);
-        initSecurity();
-      } else {
-        clearSavedLogin();
-        errorMessage.style.display = 'block';
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const error = document.getElementById("error-msg");
+      const button = loginForm.querySelector('button[type="submit"]');
+      error.style.display = "none";
+      button.disabled = true;
+      button.textContent = "Signing in...";
+      try {
+        await signInWithEmailAndPassword(auth,
+          document.getElementById("email-input").value.trim(),
+          document.getElementById("password-input").value);
+        document.getElementById("password-input").value = "";
+      } catch (err) {
+        error.textContent = "Login failed. Check your email and password.";
+        error.style.display = "block";
+      } finally {
+        button.disabled = false;
+        button.textContent = "Login";
       }
     });
 
-    function logoutUser() {
-      clearSavedLogin();
+    async function logoutUser() {
+      approvedUid = null;
       iframeContainer.innerHTML = "";
       showScreen(loginScreen);
-      document.getElementById('email-input').value = "";
-      document.getElementById('password-input').value = "";
-      document.getElementById('error-msg').style.display = 'none';
+      document.getElementById("password-input").value = "";
+      await signOut(auth);
     }
+    window.logoutUser = logoutUser;
+    // Inline onclick handlers need explicit exports in a module script.
+    window.openBatch1Chapters = openBatch1Chapters;
+    window.showScreen = showScreen;
+    window.goBackFromVideo = goBackFromVideo;
+    window.toggleCustomFullscreen = toggleCustomFullscreen;
 
     function openBatch1Chapters() {
+      if (!approvedUid || auth.currentUser?.uid !== approvedUid) return;
       modulesListContainer.innerHTML = "";
       batch1Nodes.forEach((node, index) => {
         const item = document.createElement('div');
@@ -560,6 +544,7 @@
     }
 
     function openLecturesList(nodeIndex) {
+      if (!approvedUid || auth.currentUser?.uid !== approvedUid) return;
       activeModuleIndex = nodeIndex;
       const selectedNode = batch1Nodes[nodeIndex];
       moduleTitleHeading.innerText = selectedNode.title;
@@ -583,6 +568,8 @@
     }
 
     function playSelectedVideo(title, vidId) {
+      if (!approvedUid || auth.currentUser?.uid !== approvedUid) return;
+      if (!vidId || vidId === "YAHAN VIDEO ID AYGI") { alert("Lecture video is not uploaded yet."); return; }
       currentPlayingTitle.innerText = title;
       iframeContainer.innerHTML = `<iframe src="https://iframe.mediadelivery.net/embed/803385/${vidId}?autoplay=true&loop=false&muted=false&preload=true" referrerpolicy="no-referrer-when-downgrade" loading="lazy" style="border:0;position:absolute;top:0;height:100%;width:100%;" allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;" allowfullscreen="false"></iframe>`;
       showScreen(videoPlayerScreen);
