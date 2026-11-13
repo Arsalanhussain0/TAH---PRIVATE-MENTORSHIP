@@ -424,6 +424,67 @@
       }
     ];
 
+    // Browser-installation token: not a hardware ID. Server enforces binding.
+    const DEVICE_KEY = "tah_device_token_v1";
+    let deviceCheckSerial = 0;
+    let lastDeviceCheck = 0;
+    let deviceCheckInProgress = false;
+    function deviceToken() {
+      let token = localStorage.getItem(DEVICE_KEY);
+      if (!/^[a-f0-9]{64}$/.test(token || "")) {
+        const bytes = crypto.getRandomValues(new Uint8Array(32));
+        token = Array.from(bytes, b => b.toString(16).padStart(2,"0")).join("");
+        localStorage.setItem(DEVICE_KEY, token);
+      }
+      return token;
+    }
+    async function deviceRequest(user, action) {
+      const response = await fetch("/api/device", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        cache:"no-store",
+        body:JSON.stringify({idToken:await user.getIdToken(),deviceSecret:deviceToken(),action})
+      });
+      const data = await response.json().catch(()=>({error:"device_service_unavailable"}));
+      if (!response.ok || !data.ok) throw new Error(data.error || "device_service_unavailable");
+      return data;
+    }
+    function blockDevice(message) {
+      approvedUid = null;
+      if (unsubscribeCourses) { unsubscribeCourses(); unsubscribeCourses = null; }
+      iframeContainer.replaceChildren();
+      batch1Nodes = [];
+      showScreen(loginScreen);
+      const error = document.getElementById("error-msg");
+      error.textContent = message;
+      error.style.display = "block";
+    }
+    async function checkDevice(user, action="verify") {
+      if (deviceCheckInProgress) return false;
+      deviceCheckInProgress = true;
+      const serial = ++deviceCheckSerial;
+      try {
+        await deviceRequest(user,action);
+        if (serial !== deviceCheckSerial || auth.currentUser?.uid !== user.uid) return false;
+        lastDeviceCheck = Date.now();
+        return true;
+      } catch(e) {
+        if (serial === deviceCheckSerial && auth.currentUser?.uid === user.uid) {
+          const msg = e.message === "other_device"
+            ? "This account is already registered on another browser/device. Contact admin to reset device."
+            : e.message === "not_approved"
+            ? "Your mentorship access is not approved or has been disabled."
+            : "Secure device verification unavailable. Please try again later.";
+          blockDevice(msg);
+        }
+        return false;
+      } finally { deviceCheckInProgress = false; }
+    }
+    // Periodic recheck reduces stale access after admin reset; backend must check every video request.
+    setInterval(async () => {
+      if (approvedUid && auth.currentUser?.uid === approvedUid && !deviceCheckInProgress) {
+        await checkDevice(auth.currentUser);
+      }
+    }, 60000);
     let currentUserEmail = "";
     let activeModuleIndex = 0;
 
@@ -451,6 +512,7 @@
     onAuthStateChanged(auth, async (user) => {
       if (unsubscribeStudent) { unsubscribeStudent(); unsubscribeStudent = null; }
       if (unsubscribeCourses) { unsubscribeCourses(); unsubscribeCourses = null; }
+      deviceCheckSerial++;
       approvedUid = null;
       currentUserEmail = "";
       iframeContainer.innerHTML = "";
@@ -469,6 +531,13 @@
           document.getElementById("error-msg").style.display = "block";
           return;
         }
+        // First approved login claims a device; later logins must match it.
+        // Firestore snapshot can fire again when deviceBinding changes.
+        if (approvedUid !== user.uid) {
+          const verified = await checkDevice(user, "claim");
+          if (!verified) return;
+        }
+        if (auth.currentUser?.uid !== user.uid || approvedUid === null && deviceCheckInProgress) return;
         approvedUid = user.uid;
         if (!unsubscribeCourses) {
           unsubscribeCourses = onSnapshot(doc(db, "courseCatalog", "batch1"), (courseSnapshot) => {
@@ -544,6 +613,7 @@
     });
 
     async function logoutUser() {
+      deviceCheckSerial++;
       approvedUid = null;
       iframeContainer.innerHTML = "";
       showScreen(loginScreen);
