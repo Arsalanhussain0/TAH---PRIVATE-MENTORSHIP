@@ -469,6 +469,22 @@
           return;
         }
         approvedUid = user.uid;
+        if (!unsubscribeCourses) {
+          unsubscribeCourses = onSnapshot(doc(db, "courseCatalog", "batch1"), (courseSnapshot) => {
+            if (auth.currentUser?.uid !== user.uid || approvedUid !== user.uid) return;
+            const modules = courseSnapshot.data()?.modules;
+            if (!Array.isArray(modules)) return;
+            batch1Nodes = modules.map(node => ({
+              title: String(node.title || "Untitled module"),
+              lectures: Array.isArray(node.lectures) ? node.lectures.map(lecture => ({
+                title: String(lecture.title || "Untitled lecture"),
+                videoId: ""
+              })) : []
+            }));
+            if (!chaptersScreen.classList.contains("hidden")) openBatch1Chapters();
+            if (!lecturesListScreen.classList.contains("hidden") && batch1Nodes[activeModuleIndex]) openLecturesList(activeModuleIndex);
+          }, (error) => console.error("Course sync failed:", error.code));
+        }
         currentUserEmail = user.email || "";
         document.getElementById("user-display").textContent = currentUserEmail;
         document.getElementById("error-msg").style.display = "none";
