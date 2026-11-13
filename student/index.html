@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="description" content="Official Student Access Portal for TAH Mentorship by Trader Arsalan Hussain">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TAH Portal">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trader Arsalan Hussain | Student Portal</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #07080a;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    #neon-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      padding: 20px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hidden { display: none !important; }
+
+    .card {
+      background: rgba(22, 25, 34, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(41, 98, 255, 0.3);
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(41, 98, 255, 0.1);
+    }
+
+    .card h2 { margin-bottom: 10px; color: #3b82f6; text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+    .card p { color: #94a3b8; margin-bottom: 20px; }
+
+    form input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      border: 1px solid #1e293b;
+      background: #0c0d10;
+      color: #fff;
+      font-size: 15px;
+    }
+
+    form input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 6px;
+      border: none;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
+    }
+
+    .error { color: #f87171; margin-top: 15px; display: none; }
+
+    .section-title {
+      font-size: 20px;
+      color: #4ade80;
+      margin-bottom: 15px;
+      font-weight: bold;
+      text-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+    }
+
+    .scroll-box {
+      max-height: 420px;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+
+    .scroll-box::-webkit-scrollbar {
+      width: 6px;
+    }
+    .scroll-box::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+
+    .list-item {
+      background: rgba(22, 25, 34, 0.85);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(42, 46, 61, 0.7);
+      padding: 14px 18px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s ease;
+    }
+
+    .list-item:hover {
+      border-color: #3b82f6;
+      background: rgba(30, 34, 45, 0.95);
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .list-item h4 { font-size: 14px; color: #fff; font-weight: 500; }
+    .list-item span { color: #94a3b8; font-size: 13px; }
+
+    .play-icon {
+      color: #4ade80;
+      margin-right: 10px;
+      font-size: 14px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      background: rgba(22, 25, 34, 0.85);
+      backdrop-filter: blur(10px);
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid rgba(42, 46, 61, 0.7);
+    }
+
+    .back-btn {
+      background: #1e293b;
+      width: auto;
+      padding: 6px 14px;
+      font-size: 14px;
+      margin-bottom: 15px;
+      cursor: pointer;
+      box-shadow: none;
+    }
+    .back-btn:hover { background: #334155; }
+
+    .logout-btn {
+      background: #dc2626;
+      width: auto;
+      padding: 6px 12px;
+      font-size: 14px;
+      box-shadow: none;
+    }
+    .logout-btn:hover { background: #b91c1c; }
+
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      background: #000;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(59, 130, 246, 0.2);
+      margin-top: 10px;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+
+    .video-wrapper.css-fullscreen {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      padding-top: 0 !important;
+      max-width: none !important;
+      z-index: 999999 !important;
+      border-radius: 0 !important;
+      border: none !important;
+    }
+
+    .video-wrapper iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .watermark {
+      position: absolute;
+      color: rgba(74, 222, 128, 0.85);
+      font-size: 18px;
+      font-weight: bold;
+      pointer-events: none;
+      z-index: 2147483647;
+      user-select: none;
+      transition: all 1.5s ease-in-out;
+      text-shadow: 1px 1px 6px rgba(0,0,0,0.9);
+    }
+
+    .custom-fs-btn {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #4ade80;
+      border: 1px solid #4ade80;
+      padding: 6px 12px;
+      font-size: 13px;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 2147483648;
+      font-weight: bold;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .custom-fs-btn:hover {
+      background: #4ade80;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="neon-canvas"></canvas>
+
+  <!-- 1. LOGIN SCREEN -->
+  <div id="login-screen" class="container">
+    <div class="card">
+      <h2>Trader Arsalan Hussain Portal</h2>
+      <p>Enter your authorized student credentials</p>
+      <form id="login-form">
+        <input type="email" id="email-input" placeholder="Student Email" required>
+        <input type="password" id="password-input" placeholder="Access Password" required>
+        <button type="submit">Login</button>
+      </form>
+      <div id="error-msg" class="error">Invalid Credentials!</div>
+    </div>
+  </div>
+
+  <!-- Mandatory password change for newly provisioned students -->
+  <div id="password-change-screen" class="container hidden">
+    <div class="card">
+      <h2>Secure Your TAH Account</h2>
+      <p>First login: create your personal password before accessing the mentorship.</p>
+      <form id="first-password-form">
+        <input id="first-new-password" type="password" placeholder="New password (12+ characters)" minlength="12" maxlength="128" autocomplete="new-password" required>
+        <input id="first-confirm-password" type="password" placeholder="Confirm new password" minlength="12" maxlength="128" autocomplete="new-password" required>
+        <button id="first-password-btn" type="submit">Set My Password</button>
+      </form>
+      <p style="font-size:12px;color:#94a3b8">Use 12+ characters with uppercase, lowercase and a number.</p>
+      <p id="first-password-msg" class="error" role="status" style="display:none"></p>
+      <button id="first-password-logout" type="button">Logout</button>
+    </div>
+  </div>
+  <!-- 2. COURSES SCREEN -->
+  <div id="courses-screen" class="container hidden">
+    <div class="top-bar">
+      <div>
+        <h4 style="color:#4ade80;">Welcome</h4>
+        <p id="user-display" style="font-size:13px; color:#94a3b8;"></p>
+      </div>
+      <button class="logout-btn" onclick="logoutUser()">Logout</button>
+    </div>
+
+    <div class="section-title">My Courses</div>
+    
+    <div class="list-item" onclick="openBatch1Chapters()">
+      <div>
+        <h4>TAH Batch 1 lectures</h4>
+        <span style="color:#4ade80;">All 11 Nodes Available</span>
+      </div>
+      <span>➔</span>
+    </div>
+  </div>
+
+  <!-- 3. CHAPTERS SCREEN -->
+  <div id="chapters-screen" class="container hidden">
+    <button class="back-btn" onclick="showScreen(coursesScreen)">❮ Back to Courses</button>
+    <div class="section-title">TAH Batch 1 Modules</div>
+    <div id="modules-list-container" class="scroll-box"></div>
+  </div>
+
+  <!-- 4. LECTURES LIST SCREEN -->
+  <div id="lectures-list-screen" class="container hidden">
+    <button class="back-btn" onclick="showScreen(chaptersScreen)">❮ Back to Chapters</button>
+    <div id="module-title-heading" class="section-title"></div>
+    <div id="lectures-container" class="scroll-box"></div>
+  </div>
+
+  <!-- 5. VIDEO PLAYER SCREEN -->
+  <div id="video-player-screen" class="container hidden" style="max-width: 850px;">
+    <button class="back-btn" id="back-to-lec-btn" onclick="goBackFromVideo()">❮ Back to Lectures</button>
+    <h3 id="current-playing-title" style="color: #4ade80; margin-bottom: 12px; font-size: 16px;"></h3>
+
+    <div class="video-wrapper" id="video-wrapper-box">
+      <div id="watermark-overlay" class="watermark"></div>
+      <div id="iframe-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
+      <button class="custom-fs-btn" id="fs-toggle-btn" onclick="toggleCustomFullscreen()">⛶ Fullscreen</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+    const app = initializeApp({apiKey:"AIzaSyBLigEA-dRyj0goB3GkpA_TZbRToSMUyRk",authDomain:"tah-portal-36520.firebaseapp.com",projectId:"tah-portal-36520",storageBucket:"tah-portal-36520.firebasestorage.app",messagingSenderId:"1001287399874",appId:"1:1001287399874:web:cc789509a4d6b7b349fe5b",measurementId:"G-J4SPWKGGBD"});
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    let unsubscribeStudent = null;
+    let unsubscribeCourses = null;
+    let approvedUid = null;
+    // Register the updated Service Worker normally.
+    // updateViaCache:'none' asks the browser to revalidate sw.js instead of
+    // relying on a stale cached worker script.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', async () => {
+        try {
+          const registration = await navigator.serviceWorker.register('./sw.js', {
+            updateViaCache: 'none'
+          });
+          await registration.update();
+          console.log('TAH Service Worker ready:', registration.scope);
+        } catch (error) {
+          console.error('TAH Service Worker registration failed:', error);
+        }
+      });
+    }
+
+    let batch1Nodes = [
+      {
+        title: "TAH NODE 1: (Liquidity & Inefficiency)",
+        lectures: [
+          { title: "LEC 1: Introduction to TAH - The Apex House", videoId: "YAHAN VIDEO ID AYGI" },
+          { title: "LEC 2: ICT Volume Imbalance", videoId: "YAHAN VIDEO ID AYGI" }
+        ]
+      },
+      {
+        title: "TAH NODE 2: (Dealing Range Theory)",
+        lectures: [
+          { title: "LEC 1: Introduction to Dealing Ranges", videoId: "YAHAN VIDEO ID AYGI" },
+          { title: "LEC 2: Premium & Discount Arrays", videoId: "YAHAN VIDEO ID AYGI" }
+        ]
+      },
+      {
+        title: "TAH NODE 3: (FVG Types & Techniques)",
+        lectures: [
+          { title: "LEC 1: Fair Value Gap Identification", videoId: "YAHAN VIDEO ID AYGI" },
+          { title: "LEC 2: Advanced FVG Rebalancing Strategies", videoId: "YAHAN VIDEO ID AYGI" }
+        ]
+      },
+      {
+        title: "TAH NODE 4: (ICT Block Theory & MSS)",
+        lectures: [
+          { title: "LEC 1: Order Blocks & Breaker Blocks", videoId: "YAHAN VIDEO ID AYGI" },
+          { title: "LEC 2: Market Structure Shift (MSS)", videoId: "YAHAN VIDEO ID AYGI" }
+        ]
+      },
+      {
+        title: "TAH NODE 5: (ICT Bonus PD Arrays)",
+        lectures: [
+          { title: "LEC 1: Mitigation Blocks & Rejection Blocks", videoId: "YAHAN VIDEO ID AYGI" },
+          { title: "LEC 2: Liquidity Voids & Propulsion Blocks", videoId: "YAHAN VIDEO ID AYGI" }
+        ]
+      },
+      {
+        title: "TAH NODE 6: (ICT Swing Theory)",
+        lectures: [
+          { title: "LEC 1: Swing Highs & Swing Lows Setup", videoId: "YAHAN VIDEO ID AYGI" },
+          { title: "LEC 2: Internal vs External Range Liquidity", videoId: "YAHAN VIDEO ID AYGI" }
+        ]
+      },
+      {
+        title: "TAH NODE 7: (Intraday Architecture)",
+        lectures: [
+          { title: "LEC 1: Session Openings & Key Levels", videoId: "YAHAN VIDEO ID AYGI" },
+          { title: "LEC 2: Intraday Price Delivery Framework", videoId: "YAHAN VIDEO ID AYGI" }
+        ]
+      },
+      {
+        title: "TAH NODE 8: (ICT Time & Price Theory)",
+        lectures: [
+          { title: "LEC 1: Timing Daily Market Cycles", videoId: "YAHAN VIDEO ID AYGI" },
+          { title: "LEC 2: Killzones & Opening Ranges", videoId: "YAHAN VIDEO ID AYGI" }
+        ]
+      },
+      {
+        title: "TAH NODE 9: (ICT Power of 3 - Classic Buy/Sell Day)",
+        lectures: [
+          { title: "LEC 1: Accumulation, Manipulation & Distribution (AMD)", videoId: "YAHAN VIDEO ID AYGI" },
+          { title: "LEC 2: Identifying Classic Buy & Sell Days", videoId: "YAHAN VIDEO ID AYGI" }
+        ]
+      },
+      {
+        title: "TAH NODE 10: (ICT Trading Models)",
+        lectures: [
+          { title: "LEC 1: Core Algorithmic Model Walkthrough", videoId: "YAHAN VIDEO ID AYGI" },
+          { title: "LEC 2: Execution Checklist & Rules", videoId: "YAHAN VIDEO ID AYGI" }
+        ]
+      },
+      {
+        title: "TAH NODE 11: (IMPERIUM X - Risk Management)",
+        lectures: [
+          { title: "LEC 1: Capital Preservation & Lot Sizing", videoId: "YAHAN VIDEO ID AYGI" },
+          { title: "LEC 2: Trader Psychology & Risk Discipline", videoId: "YAHAN VIDEO ID AYGI" }
+        ]
+      }
+    ];
+
+    // Browser-installation token: not a hardware ID. Server enforces binding.
+    const DEVICE_KEY = "tah_device_token_v1";
+    let deviceCheckSerial = 0;
+    let lastDeviceCheck = 0;
+    let deviceCheckInProgress = false;
+    function deviceToken() {
+      let token = localStorage.getItem(DEVICE_KEY);
+      if (!/^[a-f0-9]{64}$/.test(token || "")) {
+        const bytes = crypto.getRandomValues(new Uint8Array(32));
+        token = Array.from(bytes, b => b.toString(16).padStart(2,"0")).join("");
+        localStorage.setItem(DEVICE_KEY, token);
+      }
+      return token;
+    }
+    async function deviceRequest(user, action) {
+      const response = await fetch("/api/device", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        cache:"no-store",
+        body:JSON.stringify({idToken:await user.getIdToken(),deviceSecret:deviceToken(),action})
+      });
+      const data = await response.json().catch(()=>({error:"device_service_unavailable"}));
+      if (!response.ok || !data.ok) throw new Error(data.error || "device_service_unavailable");
+      return data;
+    }
+    function blockDevice(message) {
+      approvedUid = null;
+      if (unsubscribeCourses) { unsubscribeCourses(); unsubscribeCourses = null; }
+      iframeContainer.replaceChildren();
+      batch1Nodes = [];
+      showScreen(loginScreen);
+      const error = document.getElementById("error-msg");
+      error.textContent = message;
+      error.style.display = "block";
+    }
+    async function checkDevice(user, action="verify") {
+      if (deviceCheckInProgress) return false;
+      deviceCheckInProgress = true;
+      const serial = ++deviceCheckSerial;
+      try {
+        await deviceRequest(user,action);
+        if (serial !== deviceCheckSerial || auth.currentUser?.uid !== user.uid) return false;
+        lastDeviceCheck = Date.now();
+        return true;
+      } catch(e) {
+        if (serial === deviceCheckSerial && auth.currentUser?.uid === user.uid) {
+          const msg = e.message === "other_device"
+            ? "This account is already registered on another browser/device. Contact admin to reset device."
+            : e.message === "not_approved"
+            ? "Your mentorship access is not approved or has been disabled."
+            : "Secure device verification unavailable. Please try again later.";
+          blockDevice(msg);
+        }
+        return false;
+      } finally { deviceCheckInProgress = false; }
+    }
+    // Periodic recheck reduces stale access after admin reset; backend must check every video request.
+    setInterval(async () => {
+      if (approvedUid && auth.currentUser?.uid === approvedUid && !deviceCheckInProgress) {
+        await checkDevice(auth.currentUser);
+      }
+    }, 60000);
+    let currentUserEmail = "";
+    let activeModuleIndex = 0;
+
+    const loginForm = document.getElementById('login-form');
+    const loginScreen = document.getElementById('login-screen');
+    const coursesScreen = document.getElementById('courses-screen');
+    const passwordChangeScreen = document.getElementById('password-change-screen');
+    const chaptersScreen = document.getElementById('chapters-screen');
+    const lecturesListScreen = document.getElementById('lectures-list-screen');
+    const videoPlayerScreen = document.getElementById('video-player-screen');
+    
+    const modulesListContainer = document.getElementById('modules-list-container');
+    const lecturesContainer = document.getElementById('lectures-container');
+    const moduleTitleHeading = document.getElementById('module-title-heading');
+    const currentPlayingTitle = document.getElementById('current-playing-title');
+    const iframeContainer = document.getElementById('iframe-container');
+    const watermarkOverlay = document.getElementById('watermark-overlay');
+    const videoWrapperBox = document.getElementById('video-wrapper-box');
+    const fsToggleBtn = document.getElementById('fs-toggle-btn');
+    const backToLecBtn = document.getElementById('back-to-lec-btn');
+
+    // Initialize player state before the first showScreen() call.
+    let playbackRequestNumber = 0;
+    let previewWatermarkTimer = null;
+    // Firebase controls sessions; old localStorage credentials are ignored.
+    localStorage.removeItem("tah_logged_user");
+    localStorage.removeItem("tah_students_hash");
+    showScreen(loginScreen);
+    onAuthStateChanged(auth, async (user) => {
+      if (unsubscribeStudent) { unsubscribeStudent(); unsubscribeStudent = null; }
+      if (unsubscribeCourses) { unsubscribeCourses(); unsubscribeCourses = null; }
+      deviceCheckSerial++;
+      approvedUid = null;
+      currentUserEmail = "";
+      iframeContainer.innerHTML = "";
+      showScreen(loginScreen);
+      if (!user) return;
+      unsubscribeStudent = onSnapshot(doc(db, "Students", user.uid), async (snapshot) => {
+        if (auth.currentUser?.uid !== user.uid) return;
+        const record = snapshot.data();
+        if (!snapshot.exists() || record.active !== true || record.role !== "student") {
+          approvedUid = null;
+          currentUserEmail = "";
+          if (unsubscribeCourses) { unsubscribeCourses(); unsubscribeCourses = null; }
+          iframeContainer.replaceChildren();
+          showScreen(loginScreen);
+          document.getElementById("error-msg").textContent = "Your mentorship access is not approved or has been disabled.";
+          document.getElementById("error-msg").style.display = "block";
+          return;
+        }
+        if(record.mustChangePassword===true){
+          approvedUid=null;
+          if(unsubscribeCourses){unsubscribeCourses();unsubscribeCourses=null}
+          iframeContainer.replaceChildren();
+          showScreen(passwordChangeScreen);
+          return;
+        }
+        // First approved login claims a device; later logins must match it.
+        // Firestore snapshot can fire again when deviceBinding changes.
+        if (approvedUid !== user.uid) {
+          const verified = await checkDevice(user, "claim");
+          if (!verified) return;
+        }
+        if (auth.currentUser?.uid !== user.uid || approvedUid === null && deviceCheckInProgress) return;
+        approvedUid = user.uid;
+        if (!unsubscribeCourses) {
+          unsubscribeCourses = onSnapshot(doc(db, "courseCatalog", "batch1"), (courseSnapshot) => {
+            if (auth.currentUser?.uid !== user.uid || approvedUid !== user.uid) return;
+            const modules = courseSnapshot.data()?.modules;
+            if (!Array.isArray(modules)) return;
+            batch1Nodes = modules.map(node => ({
+              title: String(node.title || "Untitled module"),
+              lectures: Array.isArray(node.lectures) ? node.lectures.map(lecture => ({
+                id: String(lecture.id || ""),
+                title: String(lecture.title || "Untitled lecture"),
+                releaseMode: lecture.releaseMode === "unlocked" || !lecture.releaseMode ? "unlocked" : "locked",
+                releaseAt: lecture.releaseAt || "",
+                videoId: ""
+              })) : []
+            }));
+            if (!chaptersScreen.classList.contains("hidden")) openBatch1Chapters();
+            if (!lecturesListScreen.classList.contains("hidden") && batch1Nodes[activeModuleIndex]) openLecturesList(activeModuleIndex);
+          }, (error) => {
+            console.error("Course sync failed:", error.code);
+            batch1Nodes = [];
+            iframeContainer.replaceChildren();
+            showScreen(coursesScreen);
+            const message = document.getElementById("error-msg");
+            message.textContent = "Course access cannot be verified right now. Please try again later.";
+            message.style.display = "block";
+          });
+        }
+        currentUserEmail = user.email || "";
+        document.getElementById("user-display").textContent = currentUserEmail;
+        document.getElementById("error-msg").style.display = "none";
+        if (loginScreen.classList.contains("hidden") === false) showScreen(coursesScreen);
+      }, (error) => {
+        approvedUid = null;
+        if (unsubscribeCourses) { unsubscribeCourses(); unsubscribeCourses = null; }
+        iframeContainer.replaceChildren();
+        showScreen(loginScreen);
+        document.getElementById("error-msg").textContent = "Cannot verify access. Check Firestore rules and internet connection.";
+        document.getElementById("error-msg").style.display = "block";
+        console.error("Student access check failed", error.code);
+      });
+    });
+
+    function showScreen(screenToShow) {
+      if (videoWrapperBox.classList.contains('css-fullscreen')) {
+        toggleCustomFullscreen();
+      }
+      [loginScreen, passwordChangeScreen, coursesScreen, chaptersScreen, lecturesListScreen, videoPlayerScreen].forEach(s => s.classList.add('hidden'));
+      screenToShow.classList.remove('hidden');
+      if (screenToShow !== videoPlayerScreen) {
+        playbackRequestNumber++;
+        stopPreviewWatermark();
+        iframeContainer.innerHTML = "";
+      }
+    }
+
+    document.getElementById("first-password-logout").onclick=()=>logoutUser();
+    document.getElementById("first-password-form").addEventListener("submit",async event=>{
+      event.preventDefault();
+      const newPassword=document.getElementById("first-new-password").value;
+      const confirmPassword=document.getElementById("first-confirm-password").value;
+      const message=document.getElementById("first-password-msg");
+      const button=document.getElementById("first-password-btn");
+      message.style.display="none";
+      if(newPassword!==confirmPassword||newPassword.length<12||!/[a-z]/.test(newPassword)||!/[A-Z]/.test(newPassword)||!/[0-9]/.test(newPassword)){
+        message.textContent="Passwords must match and contain 12+ characters, uppercase, lowercase and a number.";
+        message.style.display="block";return;
+      }
+      button.disabled=true;
+      try{
+        const token=await auth.currentUser.getIdToken();
+        const response=await fetch("/api/change-first-password",{
+          method:"POST",cache:"no-store",
+          headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+          body:JSON.stringify({newPassword})
+        });
+        const result=await response.json().catch(()=>({}));
+        if(!response.ok||!result.ok)throw Error(result.error||"password_change_unavailable");
+        document.getElementById("first-password-form").reset();
+        message.textContent="Password updated. Please sign in again with your new password.";
+        message.style.display="block";
+        await signOut(auth);
+      }catch(e){
+        message.textContent="Password change failed: "+e.message+". If your login is old, logout and sign in again.";
+        message.style.display="block";
+      }finally{button.disabled=false}
+    });
+
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const error = document.getElementById("error-msg");
+      const button = loginForm.querySelector('button[type="submit"]');
+      error.style.display = "none";
+      button.disabled = true;
+      button.textContent = "Signing in...";
+      try {
+        await signInWithEmailAndPassword(auth,
+          document.getElementById("email-input").value.trim(),
+          document.getElementById("password-input").value);
+        document.getElementById("password-input").value = "";
+      } catch (err) {
+        error.textContent = "Login failed. Check your email and password.";
+        error.style.display = "block";
+      } finally {
+        button.disabled = false;
+        button.textContent = "Login";
+      }
+    });
+
+    async function logoutUser() {
+      deviceCheckSerial++;
+      approvedUid = null;
+      iframeContainer.innerHTML = "";
+      showScreen(loginScreen);
+      document.getElementById("password-input").value = "";
+      await signOut(auth);
+    }
+    window.logoutUser = logoutUser;
+    // Inline onclick handlers need explicit exports in a module script.
+    window.openBatch1Chapters = openBatch1Chapters;
+    window.showScreen = showScreen;
+    // Inline navigation buttons need these screen references globally.
+    window.coursesScreen = coursesScreen;
+    window.chaptersScreen = chaptersScreen;
+    window.goBackFromVideo = goBackFromVideo;
+    window.toggleCustomFullscreen = toggleCustomFullscreen;
+
+    function openBatch1Chapters() {
+      if (!approvedUid || auth.currentUser?.uid !== approvedUid) return;
+      modulesListContainer.innerHTML = "";
+      batch1Nodes.forEach((node, index) => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.onclick = () => openLecturesList(index);
+        const heading = document.createElement("h4");
+        heading.textContent = node.title;
+        const count = document.createElement("span");
+        count.style.color = "#3b82f6";
+        count.textContent = node.lectures.length + " Videos";
+        item.append(heading, count);
+        modulesListContainer.appendChild(item);
+      });
+      showScreen(chaptersScreen);
+    }
+
+    function isReleased(lec) {
+      return lec.releaseMode !== "locked";
+    }
+    function releaseLabel(lec) {
+      return lec.releaseMode === "locked" ? "Locked" : "Watch";
+    }
+    function openLecturesList(nodeIndex) {
+      if (!approvedUid || auth.currentUser?.uid !== approvedUid) return;
+      activeModuleIndex = nodeIndex;
+      const selectedNode = batch1Nodes[nodeIndex];
+      moduleTitleHeading.innerText = selectedNode.title;
+      lecturesContainer.innerHTML = "";
+
+      selectedNode.lectures.forEach((lec, lectureIndex) => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        const released = isReleased(lec);
+        item.onclick = () => {
+          if (!isReleased(lec)) { alert(releaseLabel(lec)); return; }
+          playSelectedVideo(lec.title, nodeIndex, lectureIndex);
+        };
+        const left = document.createElement("div");
+        left.style.cssText = "display:flex;align-items:center;gap:10px";
+        const icon = document.createElement("span");
+        icon.textContent = released ? "▶" : "🔒";
+        const title = document.createElement("h4");
+        title.textContent = lec.title;
+        const status = document.createElement("span");
+        status.textContent = released ? "Watch" : releaseLabel(lec);
+        status.style.cssText = "font-size:12px;color:" + (released ? "#94a3b8" : "#fbbf24");
+        left.append(icon,title);
+        item.append(left,status);
+        lecturesContainer.appendChild(item);
+      });
+
+      showScreen(lecturesListScreen);
+    }
+
+    async function playSelectedVideo(title, moduleIndex, lectureIndex) {
+      if (!approvedUid || auth.currentUser?.uid !== approvedUid) return;
+      const lecture = batch1Nodes[moduleIndex]?.lectures?.[lectureIndex];
+      if (!lecture || !isReleased(lecture)) return;
+      const requestNumber = ++playbackRequestNumber;
+      currentPlayingTitle.textContent = title;
+      showScreen(videoPlayerScreen);
+      startPreviewWatermark(currentUserEmail || auth.currentUser?.email || "TAH Student");
+      iframeContainer.replaceChildren();
+      const status = document.createElement("p");
+      status.style.cssText = "position:absolute;inset:0;display:grid;place-items:center;padding:22px;text-align:center;color:#cbd5e1";
+      status.textContent = "Verifying secure video access...";
+      iframeContainer.append(status);
+      try {
+        const user = auth.currentUser;
+        const response = await fetch("/api/playback", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          cache:"no-store",
+          body:JSON.stringify({
+            idToken:await user.getIdToken(),
+            deviceSecret:deviceToken(),
+            moduleIndex,lectureIndex
+          })
+        });
+        const result = await response.json().catch(()=>({}));
+        if (requestNumber !== playbackRequestNumber || approvedUid !== user.uid ||
+            auth.currentUser?.uid !== user.uid || videoPlayerScreen.classList.contains("hidden")) return;
+        if (!response.ok || !result.otp || !result.playbackInfo) {
+          const messages = {
+            video_not_uploaded:"This lecture video has not been uploaded yet.",
+            video_service_not_configured:"Secure video service is not activated yet.",
+            lecture_locked:"This lecture is currently locked.",
+            device_not_authorized:"This browser is not the registered device. Contact admin.",
+            student_not_approved:"Your mentorship access is not active.",
+            playback_unavailable:"Video is temporarily unavailable. Please try again.",
+            video_provider_unavailable:"Video provider is temporarily unavailable."
+          };
+          status.textContent = messages[result.error] || "Secure video unavailable. Please try again later.";
+          return;
+        }
+        const iframe = document.createElement("iframe");
+        const url = new URL("https://player.vdocipher.com/v2/");
+        url.searchParams.set("otp",result.otp);
+        url.searchParams.set("playbackInfo",result.playbackInfo);
+        iframe.src = url.toString();
+        iframe.title = title;
+        iframe.referrerPolicy = "strict-origin-when-cross-origin";
+        iframe.allow = "encrypted-media; autoplay; fullscreen; picture-in-picture";
+        iframe.setAttribute("allowfullscreen","");
+        iframe.style.cssText = "border:0;position:absolute;inset:0;width:100%;height:100%";
+        iframeContainer.replaceChildren(iframe);
+        // Provider-side watermark is applied by backend OTP annotation.
+        stopPreviewWatermark();
+      } catch (error) {
+        if (requestNumber === playbackRequestNumber) status.textContent =
+          "Cannot connect to secure video service. Please try again later.";
+      }
+    }
+
+    function goBackFromVideo() {
+      playbackRequestNumber++;
+      stopPreviewWatermark();
+      if (videoWrapperBox.classList.contains('css-fullscreen')) {
+        toggleCustomFullscreen();
+      }
+      iframeContainer.innerHTML = "";
+      showScreen(lecturesListScreen);
+    }
+
+    function toggleCustomFullscreen() {
+      if (!videoWrapperBox.classList.contains('css-fullscreen')) {
+        videoWrapperBox.classList.add('css-fullscreen');
+        fsToggleBtn.innerText = "✕ Exit Fullscreen";
+        backToLecBtn.style.display = "none";
+        currentPlayingTitle.style.display = "none";
+      } else {
+        videoWrapperBox.classList.remove('css-fullscreen');
+        fsToggleBtn.innerText = "⛶ Fullscreen";
+        backToLecBtn.style.display = "block";
+        currentPlayingTitle.style.display = "block";
+      }
+    }
+
+    function stopPreviewWatermark() {
+      if (previewWatermarkTimer !== null) clearInterval(previewWatermarkTimer);
+      previewWatermarkTimer = null;
+      watermarkOverlay.textContent = "";
+    }
+    function startPreviewWatermark(email) {
+      stopPreviewWatermark();
+      watermarkOverlay.textContent = email + " • TAH PRIVATE MENTORSHIP";
+      watermarkOverlay.style.cssText += ";max-width:70%;overflow-wrap:anywhere;opacity:.68;text-align:center;";
+      const move = () => {
+        watermarkOverlay.style.top = (12 + Math.random() * 65) + "%";
+        watermarkOverlay.style.left = (5 + Math.random() * 35) + "%";
+      };
+      move();
+      previewWatermarkTimer = setInterval(move, 3200);
+    }
+
+    const canvas = document.getElementById('neon-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let mouse = { x: null, y: null, radius: 150 };
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    window.addEventListener('mousemove', (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+
+    window.addEventListener('click', (e) => {
+      createRipple(e.clientX, e.clientY);
+    });
+
+    let ripples = [];
+    function createRipple(x, y) {
+      ripples.push({ x: x, y: y, radius: 10, alpha: 1 });
+    }
+
+    let particles = [];
+    for (let i = 0; i < 40; i++) {
+      particles.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: (Math.random() - 0.5) * 0.8,
+        size: Math.random() * 2 + 1
+      });
+    }
+
+    function animateNeon() {
+      ctx.clearRect(0, 0, width, height);
+
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (mouse.x !== null && mouse.y !== null) {
+          let dx = p.x - mouse.x;
+          let dy = p.y - mouse.y;
+          let dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 150) {
+            ctx.strokeStyle = `rgba(37, 99, 235, ${1 - dist/150})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(mouse.x, mouse.y);
+            ctx.stroke();
+          }
+        }
+      });
+
+      if (mouse.x !== null && mouse.y !== null) {
+        let gradient = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 180);
+        gradient.addColorStop(0, 'rgba(37, 99, 235, 0.15)');
+        gradient.addColorStop(1, 'rgba(7, 8, 10, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      ripples.forEach((r, index) => {
+        r.radius += 4;
+        r.alpha -= 0.03;
+        r.alpha <= 0 && ripples.splice(index, 1);
+        ctx.strokeStyle = `rgba(59, 130, 246, ${r.alpha})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+
+      requestAnimationFrame(animateNeon);
+    }
+    animateNeon();
+
+    function initSecurity() {
+      document.addEventListener('contextmenu', e => e.preventDefault());
+      document.addEventListener('keydown', e => {
+        if (
+          e.key === 'F12' ||
+          (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+          (e.ctrlKey && e.shiftKey && e.key === 'J') ||
+          (e.ctrlKey && e.key === 'u')
+        ) {
+          e.preventDefault();
+        }
+      });
+    }
+  </script>
+</body>
+</html>
