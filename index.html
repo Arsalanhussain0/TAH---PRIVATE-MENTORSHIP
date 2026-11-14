@@ -581,6 +581,7 @@ body:has(#tah-command-shell:not(.hidden)){display:block}
     // Firebase controls sessions; old localStorage credentials are ignored.
     localStorage.removeItem("tah_logged_user");
     localStorage.removeItem("tah_students_hash");
+    const tahShell=document.getElementById("tah-command-shell");const tahHeading=document.getElementById("tah-page-heading");
     showScreen(loginScreen);
     onAuthStateChanged(auth, async (user) => {
       if (unsubscribeStudent) { unsubscribeStudent(); unsubscribeStudent = null; }
@@ -662,7 +663,7 @@ body:has(#tah-command-shell:not(.hidden)){display:block}
       });
     });
 
-const tahShell=document.getElementById("tah-command-shell");const tahHeading=document.getElementById("tah-page-heading");
+
 function tahRefreshStats(){const modules=batch1Nodes.length;const lectures=batch1Nodes.reduce((n,m)=>n+m.lectures.length,0);const unlocked=batch1Nodes.reduce((n,m)=>n+m.lectures.filter(isReleased).length,0);document.getElementById("tah-total-modules").textContent=modules;document.getElementById("tah-total-lectures").textContent=lectures;document.getElementById("tah-unlocked-lectures").textContent=unlocked;const pct=lectures?Math.round(unlocked/lectures*100):0;document.getElementById("tah-progress-fill").style.width=pct+"%";document.getElementById("tah-availability-bar").setAttribute("aria-valuenow",pct)}
 document.getElementById("tah-nav-home").addEventListener("click",()=>{if(approvedUid)showScreen(coursesScreen)});
 document.getElementById("tah-nav-courses").addEventListener("click",()=>{if(approvedUid)openBatch1Chapters()});
