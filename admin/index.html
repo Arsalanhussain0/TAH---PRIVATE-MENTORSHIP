@@ -209,6 +209,7 @@ function renderCourses(){
         const option=document.createElement("option");option.value=value;option.textContent=text;mode.append(option);
       }
       mode.value=lec.releaseMode==="unlocked"?"unlocked":"locked";
+      mode.style.borderColor=mode.value==="locked"?"#dc2626":"#16a34a";
       mode.setAttribute("aria-label","Lecture access: "+lec.title);
       mode.onchange=()=>editCatalog(async nodes=>{
         nodes[i].lectures[j].releaseMode=mode.value;
@@ -225,7 +226,7 @@ async function editCatalog(change){
   if(!adminUid||!catalog)return;
   const nodes=JSON.parse(JSON.stringify(catalog.modules));
   if(await change(nodes)===false)return;
-  try{await updateDoc(doc(db,"courseCatalog","batch1"),{modules:nodes});msg("courseMsg","Saved!")}catch(e){msg("courseMsg","Save failed: "+e.code)}
+  try{await updateDoc(doc(db,"courseCatalog","batch1"),{modules:nodes});msg("courseMsg","Lecture access updated. Student portal syncs automatically.")}catch(e){msg("courseMsg","Save failed: "+(e.code||e.message));renderCourses()}
 }
 $("seedCourses").onclick=async()=>{
   if(!adminUid||catalog)return;
