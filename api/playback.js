@@ -12,7 +12,6 @@ module.exports=async function handler(req,res){
   res.setHeader("Pragma","no-cache");
   if(req.method!=="POST")return respond(res,405,{error:"method_not_allowed"});
   if(!admin.apps.length)return respond(res,503,{error:"backend_not_configured"});
-  if(!process.env.VDOCIPHER_API_SECRET)return respond(res,503,{error:"video_service_not_configured"});
   const {idToken,deviceSecret,moduleIndex,lectureIndex}=req.body||{};
   if(typeof idToken!=="string"||idToken.length>10000||typeof deviceSecret!=="string"||!/^[a-f0-9]{64}$/.test(deviceSecret))
     return respond(res,401,{error:"authentication_required"});
@@ -38,9 +37,39 @@ module.exports=async function handler(req,res){
     if(!lecture)return respond(res,404,{error:"lecture_not_found"});
     if(lecture.releaseMode==="locked")return respond(res,403,{error:"lecture_locked"});
     // Keep IDs server-side. Only authenticated admins can provision mapping.
-    const videoId=lecture.id && videoSnap.data()?.videos?.[lecture.id];
-    if(typeof videoId!=="string"||!/^[a-zA-Z0-9_-]{8,64}$/.test(videoId))
-      return respond(res,404,{error:"video_not_uploaded"});
+    const mapping=lecture.id&&videoSnap.data()?.videos?.[lecture.id];
+    const source=typeof mapping==="string"?{provider:"vdocipher",videoId:mapping}:mapping;
+    if(!source||typeof source!=="object")return respond(res,404,{error:"video_not_uploaded"});
+    const {provider,videoId}=source;
+    if(!/^[A-Za-z0-9_-]{6,128}$/.test(videoId||""))return respond(res,404,{error:"video_not_uploaded"});
+    if(provider!=="vdocipher"){
+      let url;
+      if(provider==="bunny"){
+        if(!/^[0-9]{1,12}$/.test(source.libraryId||""))return respond(res,400,{error:"invalid_video_mapping"});
+        url="https://player.mediadelivery.net/embed/"+source.libraryId+"/"+videoId;
+        // When token authentication is enabled on Bunny, sign embeds server-side.
+        if(process.env.BUNNY_STREAM_TOKEN_KEY){
+          const expires=Math.floor(Date.now()/1000)+300;
+          const token=crypto.createHash("sha256").update(process.env.BUNNY_STREAM_TOKEN_KEY+videoId+expires).digest("hex");
+          url+="?token="+token+"&expires="+expires;
+        }
+      }else if(provider==="youtube"){
+        if(!/^[A-Za-z0-9_-]{11}$/.test(videoId))return respond(res,400,{error:"invalid_video_mapping"});
+        url="https://www.youtube-nocookie.com/embed/"+videoId;
+      }else if(provider==="vimeo"){
+        if(!/^[0-9]{6,20}$/.test(videoId))return respond(res,400,{error:"invalid_video_mapping"});
+        url="https://player.vimeo.com/video/"+videoId;
+      }else if(provider==="cloudflare"){
+        if(!/^[A-Za-z0-9_-]{5,100}$/.test(source.customerCode||""))return respond(res,400,{error:"invalid_video_mapping"});
+        url="https://customer-"+source.customerCode+".cloudflarestream.com/"+videoId+"/iframe";
+      }else if(provider==="wistia"){
+        url="https://fast.wistia.net/embed/iframe/"+videoId;
+      }else if(provider==="mux"){
+        url="https://player.mux.com/"+videoId;
+      }else return respond(res,400,{error:"unsupported_video_provider"});
+      return respond(res,200,{provider,embedUrl:url});
+    }
+    if(!process.env.VDOCIPHER_API_SECRET)return respond(res,503,{error:"video_service_not_configured"});
     const watermark=(user.email||user.uid).replace(/[\r\n\[\]{}'"]/g," ").slice(0,120);
     const annotate=JSON.stringify([{type:"rtext",text:watermark,alpha:"0.55",color:"0xFFFFFF",size:"15",interval:"5000",skip:"1000"}]);
     const upstream=await fetch("https://dev.vdocipher.com/api/videos/"+encodeURIComponent(videoId)+"/otp",{
@@ -52,6 +81,6 @@ module.exports=async function handler(req,res){
     if(!upstream.ok)return respond(res,502,{error:"video_provider_unavailable"});
     const data=await upstream.json();
     if(typeof data.otp!=="string"||typeof data.playbackInfo!=="string")return respond(res,502,{error:"invalid_video_provider_response"});
-    return respond(res,200,{otp:data.otp,playbackInfo:data.playbackInfo});
+    return respond(res,200,{provider:"vdocipher",otp:data.otp,playbackInfo:data.playbackInfo});
   }catch(e){console.error("Playback request failed:",e?.message);return respond(res,500,{error:"playback_unavailable"})}
 };
