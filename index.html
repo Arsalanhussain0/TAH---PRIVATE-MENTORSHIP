@@ -287,7 +287,23 @@ form input:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(59,130,246,.16)}
 @media(max-width:600px){.container{padding:15px}.card{border-radius:20px}.list-item{padding:15px;min-height:62px}.top-bar{padding:14px}.section-title{margin-top:6px}.scroll-box{max-height:60dvh}body::before{opacity:.13}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.container{animation:none}}
 
-  </style>
+  /* TAH ROYAL COMMAND CENTER V3 */
+body:has(#tah-command-shell:not(.hidden)){display:block}
+#tah-command-shell{position:relative;z-index:2;display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100dvh;max-width:1600px;margin:auto}
+.tah-sidebar{position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;gap:25px;padding:26px 18px;background:linear-gradient(#0e2042,#071021);border-right:1px solid #60a5fa44}
+.tah-brand{padding:14px 10px 25px;border-bottom:1px solid #60a5fa33;color:#e6f4ff;font-weight:900;letter-spacing:2px}.tah-brand small{display:block;font-size:10px;color:#88a9d5;letter-spacing:1px;margin-top:8px}
+.tah-nav{display:flex;flex-direction:column;gap:9px}.tah-nav-btn{display:flex;align-items:center;gap:12px;text-align:left;padding:14px;border-radius:13px;background:transparent;box-shadow:none;border:1px solid transparent;font-size:13px;color:#abc4e8}.tah-nav-btn span{font-size:20px}.tah-nav-btn[aria-current=page],.tah-nav-btn:hover{background:#2563eb30;border-color:#60a5fa55;color:white;box-shadow:inset 3px 0 #38bdf8}
+.tah-sidebar-foot{margin-top:auto;border:1px solid #60a5fa33;border-radius:14px;padding:17px;font-size:12px;color:#8daed6;line-height:1.7}
+.tah-workspace{min-width:0;padding:0 clamp(16px,3vw,50px) 50px}.tah-workspace-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:25px 0;border-bottom:1px solid #60a5fa26;margin-bottom:28px}.tah-workspace-head h1{font-size:clamp(20px,3vw,29px);color:#e6f3ff}.tah-eyebrow{font-size:11px;letter-spacing:2px;color:#60a5fa;margin-bottom:8px}.tah-status{font-size:11px;color:#86efac;border:1px solid #22c55e55;border-radius:22px;padding:10px;white-space:nowrap}
+.tah-workspace .container{max-width:1100px;width:100%;margin:0;padding:0}#tah-command-shell #video-player-screen{max-width:1100px!important}
+.tah-hero{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:clamp(24px,4vw,42px);border:1px solid #60a5fa55;border-radius:24px;background:radial-gradient(circle at 95% 0%,#2563eb55,transparent 50%),linear-gradient(120deg,#112650,#081122);box-shadow:0 22px 60px #0007;margin-bottom:20px}.tah-hero h2{font-size:clamp(25px,4vw,40px);line-height:1.16;margin:12px 0;color:#f1f8ff;letter-spacing:-1px}.tah-hero p{font-size:13px;color:#adc5e2;line-height:1.7;max-width:490px}.tah-hero-label{font-size:11px;letter-spacing:2px;color:#67e8f9;font-weight:800}.tah-emblem{display:grid;place-items:center;flex-shrink:0;width:130px;height:130px;transform:rotate(-9deg);border-radius:28px;border:1px solid #60a5fa88;background:linear-gradient(135deg,#245bb1,#08182f);box-shadow:0 16px 45px #2563eb55;color:#e0f2fe;font-size:43px;font-weight:900}
+.tah-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-bottom:22px}.tah-stat{background:#0e1e39dd;border:1px solid #60a5fa44;border-radius:16px;padding:20px}.tah-stat strong{display:block;font-size:clamp(21px,3vw,29px);color:#e7f3ff}.tah-stat small{display:block;margin-top:8px;font-size:11px;color:#92b1d3}.tah-progress{height:6px;background:#193151;border-radius:20px;overflow:hidden;margin-bottom:26px}.tah-progress span{display:block;width:0;height:100%;background:linear-gradient(90deg,#2563eb,#22d3ee);transition:width .5s}
+#tah-command-shell .scroll-box{max-height:68dvh}#tah-command-shell .section-title{margin:17px 0 20px}
+@media(min-width:1150px){#modules-list-container{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-height:none!important}#modules-list-container .list-item{margin:0;min-height:90px}}
+@media(max-width:800px){#tah-command-shell{grid-template-columns:1fr;padding-bottom:70px}.tah-sidebar{position:fixed;z-index:1000;top:auto;bottom:0;left:0;right:0;height:70px;padding:8px;background:#091831f5;border-top:1px solid #60a5fa55}.tah-brand,.tah-sidebar-foot{display:none}.tah-nav{flex-direction:row;justify-content:space-around}.tah-nav-btn{flex:1;min-width:0;flex-direction:column;justify-content:center;gap:0;padding:3px;text-align:center;font-size:10px}.tah-nav-btn[aria-current=page]{box-shadow:inset 0 2px #38bdf8}.tah-workspace{padding:0 16px 25px}.tah-workspace-head{padding:18px 0}.tah-hero{padding:24px}.tah-emblem{width:85px;height:85px;font-size:27px}}
+@media(max-width:480px){.tah-emblem{display:none}.tah-stat{padding:13px 10px}.tah-stat strong{font-size:20px}.tah-stat small{font-size:10px}.tah-stats{gap:7px}.tah-status{font-size:9px}.tah-workspace-head h1{font-size:20px}}
+@media(prefers-reduced-motion:reduce){.tah-emblem{transform:none}.tah-progress span{transition:none}}
+</style>
 </head>
 <body>
 
@@ -322,7 +338,7 @@ form input:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(59,130,246,.16)}
       <button id="first-password-logout" type="button">Logout</button>
     </div>
   </div>
-  <!-- 2. COURSES SCREEN -->
+<div id="tah-command-shell" class="hidden"><aside class="tah-sidebar"><div class="tah-brand">TAH — THE APEX HOUSE<small>PRIVATE MENTORSHIP</small></div><nav class="tah-nav" aria-label="Student navigation"><button type="button" class="tah-nav-btn" id="tah-nav-home"><span>◈</span> Dashboard</button><button type="button" class="tah-nav-btn" id="tah-nav-courses"><span>▦</span> My Courses</button><button type="button" class="tah-nav-btn" id="tah-nav-continue"><span>▶</span> Continue</button></nav><div class="tah-sidebar-foot">THE APEX STANDARD<br>Discipline · Precision · Mastery</div></aside><main class="tah-workspace"><header class="tah-workspace-head"><div><div class="tah-eyebrow">TAH / STUDENT ACADEMY</div><h1 id="tah-page-heading">Command Center</h1></div><span class="tah-status">● Mentorship Access</span></header>  <!-- 2. COURSES SCREEN -->
   <div id="courses-screen" class="container hidden">
     <div class="top-bar">
       <div>
@@ -332,7 +348,7 @@ form input:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(59,130,246,.16)}
       <button class="logout-btn" onclick="logoutUser()">Logout</button>
     </div>
 
-    <div class="section-title">My Courses</div>
+<div class="tah-hero"><div><div class="tah-hero-label">✦ WELCOME TO THE APEX HOUSE</div><h2>Master the Markets.<br>Own Your Edge.</h2><p>Your private trading mentorship command center. Develop discipline, build precision and progress through your learning journey.</p></div><div class="tah-emblem" aria-hidden="true">TAH</div></div><div class="tah-stats"><div class="tah-stat"><strong id="tah-total-modules">—</strong><small>Course Modules</small></div><div class="tah-stat"><strong id="tah-total-lectures">—</strong><small>Total Lectures</small></div><div class="tah-stat"><strong id="tah-unlocked-lectures">—</strong><small>Unlocked Lessons</small></div></div><div class="tah-progress" role="progressbar" aria-label="Unlocked lesson availability" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="tah-availability-bar"><span id="tah-progress-fill"></span></div>    <div class="section-title">My Courses</div>
     
     <div class="list-item" onclick="openBatch1Chapters()">
       <div>
@@ -369,6 +385,7 @@ form input:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(59,130,246,.16)}
     </div>
   </div>
 
+</main></div>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
@@ -617,6 +634,7 @@ form input:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(59,130,246,.16)}
                 videoId: ""
               })) : []
             }));
+            tahRefreshStats();
             if (!chaptersScreen.classList.contains("hidden")) openBatch1Chapters();
             if (!lecturesListScreen.classList.contains("hidden") && batch1Nodes[activeModuleIndex]) openLecturesList(activeModuleIndex);
           }, (error) => {
@@ -644,12 +662,21 @@ form input:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(59,130,246,.16)}
       });
     });
 
+const tahShell=document.getElementById("tah-command-shell");const tahHeading=document.getElementById("tah-page-heading");
+function tahRefreshStats(){const modules=batch1Nodes.length;const lectures=batch1Nodes.reduce((n,m)=>n+m.lectures.length,0);const unlocked=batch1Nodes.reduce((n,m)=>n+m.lectures.filter(isReleased).length,0);document.getElementById("tah-total-modules").textContent=modules;document.getElementById("tah-total-lectures").textContent=lectures;document.getElementById("tah-unlocked-lectures").textContent=unlocked;const pct=lectures?Math.round(unlocked/lectures*100):0;document.getElementById("tah-progress-fill").style.width=pct+"%";document.getElementById("tah-availability-bar").setAttribute("aria-valuenow",pct)}
+document.getElementById("tah-nav-home").addEventListener("click",()=>{if(approvedUid)showScreen(coursesScreen)});
+document.getElementById("tah-nav-courses").addEventListener("click",()=>{if(approvedUid)openBatch1Chapters()});
+document.getElementById("tah-nav-continue").addEventListener("click",()=>{if(!approvedUid)return;if(batch1Nodes[activeModuleIndex])openLecturesList(activeModuleIndex);else openBatch1Chapters()});
+
     function showScreen(screenToShow) {
       if (videoWrapperBox.classList.contains('css-fullscreen')) {
         toggleCustomFullscreen();
       }
       [loginScreen, passwordChangeScreen, coursesScreen, chaptersScreen, lecturesListScreen, videoPlayerScreen].forEach(s => s.classList.add('hidden'));
       screenToShow.classList.remove('hidden');
+      const academy=[coursesScreen,chaptersScreen,lecturesListScreen,videoPlayerScreen].includes(screenToShow)&&approvedUid!==null;
+      tahShell.classList.toggle('hidden',!academy);
+      if(academy){tahHeading.textContent=screenToShow===coursesScreen?"Command Center":screenToShow===chaptersScreen?"Course Modules":screenToShow===lecturesListScreen?"Lecture Library":"Learning Theater";for(const [id,active] of [["tah-nav-home",screenToShow===coursesScreen],["tah-nav-courses",screenToShow===chaptersScreen],["tah-nav-continue",screenToShow===lecturesListScreen||screenToShow===videoPlayerScreen]]){const el=document.getElementById(id);if(active)el.setAttribute("aria-current","page");else el.removeAttribute("aria-current")}tahRefreshStats()}
       if (screenToShow !== videoPlayerScreen) {
         playbackRequestNumber++;
         stopPreviewWatermark();
