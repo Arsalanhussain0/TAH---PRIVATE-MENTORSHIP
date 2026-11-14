@@ -303,6 +303,17 @@ body:has(#tah-command-shell:not(.hidden)){display:block}
 @media(max-width:800px){#tah-command-shell{grid-template-columns:1fr;padding-bottom:70px}.tah-sidebar{position:fixed;z-index:1000;top:auto;bottom:0;left:0;right:0;height:70px;padding:8px;background:#091831f5;border-top:1px solid #60a5fa55}.tah-brand,.tah-sidebar-foot{display:none}.tah-nav{flex-direction:row;justify-content:space-around}.tah-nav-btn{flex:1;min-width:0;flex-direction:column;justify-content:center;gap:0;padding:3px;text-align:center;font-size:10px}.tah-nav-btn[aria-current=page]{box-shadow:inset 0 2px #38bdf8}.tah-workspace{padding:0 16px 25px}.tah-workspace-head{padding:18px 0}.tah-hero{padding:24px}.tah-emblem{width:85px;height:85px;font-size:27px}}
 @media(max-width:480px){.tah-emblem{display:none}.tah-stat{padding:13px 10px}.tah-stat strong{font-size:20px}.tah-stat small{font-size:10px}.tah-stats{gap:7px}.tah-status{font-size:9px}.tah-workspace-head h1{font-size:20px}}
 @media(prefers-reduced-motion:reduce){.tah-emblem{transform:none}.tah-progress span{transition:none}}
+/* TAH V3 performance pass: avoid costly full-screen blur and layout thrash */
+body::before{display:none!important}
+#neon-canvas{opacity:.45;contain:strict}
+.card,.top-bar,.list-item{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.list-item{will-change:auto;transition:transform 160ms ease-out,border-color 160ms ease-out,background-color 160ms ease-out!important}
+.list-item:hover,.list-item:focus-visible{transform:translateY(-2px)!important}
+.container{animation:tah-fast-enter 180ms ease-out both!important}
+@keyframes tah-fast-enter{from{opacity:.86;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+button{transition:background-color 140ms ease-out,transform 140ms ease-out!important}
+@media(max-width:850px),(hover:none){#neon-canvas{display:none!important}.list-item:hover{transform:none!important}.container{animation:none!important}}
+@media(prefers-reduced-motion:reduce){#neon-canvas{display:none!important}.container{animation:none!important}.list-item,button{transition:none!important}}
 </style>
 </head>
 <body>
@@ -921,94 +932,41 @@ document.getElementById("tah-nav-continue").addEventListener("click",()=>{if(!ap
       previewWatermarkTimer = setInterval(move, 3200);
     }
 
-    const canvas = document.getElementById('neon-canvas');
-    const ctx = canvas.getContext('2d');
-    let width, height;
-    let mouse = { x: null, y: null, radius: 150 };
-
-    function resizeCanvas() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+    // Lightweight, frame-capped decorative background. No effect on access controls.
+    const canvas=document.getElementById("neon-canvas");
+    const ctx=canvas.getContext("2d",{alpha:true});
+    const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)");
+    const smallScreen=window.matchMedia("(max-width: 850px), (hover: none)");
+    let width=0,height=0,lastFrame=0,animationId=0;
+    let particles=[];
+    function resizeCanvas(){
+      const enabled=!reducedMotion.matches&&!smallScreen.matches&&!document.hidden;
+      if(!enabled){canvas.style.display="none";if(animationId)cancelAnimationFrame(animationId);animationId=0;return}
+      canvas.style.display="block";
+      width=window.innerWidth;height=window.innerHeight;
+      canvas.width=Math.round(width);canvas.height=Math.round(height);
+      particles=Array.from({length:18},()=>({x:Math.random()*width,y:Math.random()*height,
+        vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4,r:Math.random()*1.2+.5}));
+      if(!animationId){lastFrame=0;animationId=requestAnimationFrame(animateNeon)}
     }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    window.addEventListener('mousemove', (e) => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-    });
-
-    window.addEventListener('click', (e) => {
-      createRipple(e.clientX, e.clientY);
-    });
-
-    let ripples = [];
-    function createRipple(x, y) {
-      ripples.push({ x: x, y: y, radius: 10, alpha: 1 });
-    }
-
-    let particles = [];
-    for (let i = 0; i < 40; i++) {
-      particles.push({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-        vx: (Math.random() - 0.5) * 0.8,
-        vy: (Math.random() - 0.5) * 0.8,
-        size: Math.random() * 2 + 1
-      });
-    }
-
-    function animateNeon() {
-      ctx.clearRect(0, 0, width, height);
-
-      ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
-      particles.forEach(p => {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < 0 || p.x > width) p.vx *= -1;
-        if (p.y < 0 || p.y > height) p.vy *= -1;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-
-        if (mouse.x !== null && mouse.y !== null) {
-          let dx = p.x - mouse.x;
-          let dy = p.y - mouse.y;
-          let dist = Math.sqrt(dx*dx + dy*dy);
-          if (dist < 150) {
-            ctx.strokeStyle = `rgba(37, 99, 235, ${1 - dist/150})`;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(mouse.x, mouse.y);
-            ctx.stroke();
-          }
-        }
-      });
-
-      if (mouse.x !== null && mouse.y !== null) {
-        let gradient = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 180);
-        gradient.addColorStop(0, 'rgba(37, 99, 235, 0.15)');
-        gradient.addColorStop(1, 'rgba(7, 8, 10, 0)');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, width, height);
+    function animateNeon(timestamp){
+      animationId=requestAnimationFrame(animateNeon);
+      if(timestamp-lastFrame<48)return; // at most ~20 fps
+      lastFrame=timestamp;
+      ctx.clearRect(0,0,width,height);
+      ctx.fillStyle="rgba(59,130,246,.26)";
+      for(const p of particles){
+        p.x+=p.vx;p.y+=p.vy;
+        if(p.x<0||p.x>width)p.vx=-p.vx;
+        if(p.y<0||p.y>height)p.vy=-p.vy;
+        ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
       }
-
-      ripples.forEach((r, index) => {
-        r.radius += 4;
-        r.alpha -= 0.03;
-        r.alpha <= 0 && ripples.splice(index, 1);
-        ctx.strokeStyle = `rgba(59, 130, 246, ${r.alpha})`;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
-        ctx.stroke();
-      });
-
-      requestAnimationFrame(animateNeon);
     }
-    animateNeon();
+    window.addEventListener("resize",resizeCanvas,{passive:true});
+    document.addEventListener("visibilitychange",resizeCanvas);
+    reducedMotion.addEventListener("change",resizeCanvas);
+    smallScreen.addEventListener("change",resizeCanvas);
+    resizeCanvas();
 
     function initSecurity() {
       document.addEventListener('contextmenu', e => e.preventDefault());
