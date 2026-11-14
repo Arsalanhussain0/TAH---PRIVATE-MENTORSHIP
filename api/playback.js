@@ -35,7 +35,7 @@ module.exports=async function handler(req,res){
     if(!student.deviceBinding||student.deviceBinding!==hash)return respond(res,403,{error:"device_not_authorized"});
     const lecture=catalogSnap.data()?.modules?.[moduleIndex]?.lectures?.[lectureIndex];
     if(!lecture)return respond(res,404,{error:"lecture_not_found"});
-    if(lecture.releaseMode==="locked")return respond(res,403,{error:"lecture_locked"});
+    if(lecture.releaseMode!=="unlocked")return respond(res,403,{error:"lecture_locked"});
     // Keep IDs server-side. Only authenticated admins can provision mapping.
     const mapping=lecture.id&&videoSnap.data()?.videos?.[lecture.id];
     const source=typeof mapping==="string"?{provider:"vdocipher",videoId:mapping}:mapping;
