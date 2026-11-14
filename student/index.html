@@ -225,7 +225,7 @@
       font-size: 18px;
       font-weight: bold;
       pointer-events: none;
-      z-index: 2147483647;
+      z-index: 20;
       user-select: none;
       transition: all 1.5s ease-in-out;
       text-shadow: 1px 1px 6px rgba(0,0,0,0.9);
@@ -242,7 +242,7 @@
       font-size: 13px;
       border-radius: 5px;
       cursor: pointer;
-      z-index: 2147483648;
+      z-index: 21;
       font-weight: bold;
       box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
@@ -575,7 +575,7 @@
               lectures: Array.isArray(node.lectures) ? node.lectures.map(lecture => ({
                 id: String(lecture.id || ""),
                 title: String(lecture.title || "Untitled lecture"),
-                releaseMode: lecture.releaseMode === "unlocked" || !lecture.releaseMode ? "unlocked" : "locked",
+                releaseMode: lecture.releaseMode === "unlocked" ? "unlocked" : "locked",
                 releaseAt: lecture.releaseAt || "",
                 videoId: ""
               })) : []
@@ -710,10 +710,10 @@
     }
 
     function isReleased(lec) {
-      return lec.releaseMode !== "locked";
+      return lec.releaseMode === "unlocked";
     }
     function releaseLabel(lec) {
-      return lec.releaseMode === "locked" ? "Locked" : "Watch";
+      return lec.releaseMode === "unlocked" ? "Watch" : "Locked";
     }
     function openLecturesList(nodeIndex) {
       if (!approvedUid || auth.currentUser?.uid !== approvedUid) return;
@@ -804,12 +804,11 @@
         iframe.src=url.toString();
         iframe.title = title;
         iframe.referrerPolicy = "strict-origin-when-cross-origin";
-        iframe.allow = "encrypted-media; autoplay; fullscreen; picture-in-picture";
-        iframe.setAttribute("allowfullscreen","");
+        iframe.allow = "encrypted-media; autoplay; picture-in-picture";
+        // Do not allow provider-native fullscreen: it hides the portal watermark.
         iframe.style.cssText = "border:0;position:absolute;inset:0;width:100%;height:100%";
         iframeContainer.replaceChildren(iframe);
-        // Provider-side watermark is applied by backend OTP annotation.
-        stopPreviewWatermark();
+        // Keep the portal overlay visible for every provider, including YouTube.
       } catch (error) {
         if (requestNumber === playbackRequestNumber) status.textContent =
           "Cannot connect to secure video service. Please try again later.";
@@ -848,7 +847,7 @@
     function startPreviewWatermark(email) {
       stopPreviewWatermark();
       watermarkOverlay.textContent = email + " • TAH PRIVATE MENTORSHIP";
-      watermarkOverlay.style.cssText += ";max-width:70%;overflow-wrap:anywhere;opacity:.68;text-align:center;";
+      watermarkOverlay.style.cssText += ";max-width:70%;overflow-wrap:anywhere;opacity:.68;text-align:center;background:rgba(0,0,0,.25);padding:4px 8px;border-radius:5px;";
       const move = () => {
         watermarkOverlay.style.top = (12 + Math.random() * 65) + "%";
         watermarkOverlay.style.left = (5 + Math.random() * 35) + "%";
