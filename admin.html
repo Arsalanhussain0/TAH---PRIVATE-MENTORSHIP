@@ -297,21 +297,30 @@ function renderVideoList(){
    status.textContent=linkedVideoIds.has(lecture.id)?"Video linked":"Not linked";
    const link=document.createElement("button");link.className="secondary";
    link.textContent="Set Video ID";link.disabled=!lecture.id;
+   const provider=document.createElement("select");
+   provider.setAttribute("aria-label","Video platform for "+lecture.title);
+   for(const [id,label] of [["vdocipher","VdoCipher"],["bunny","Bunny Stream"],["youtube","YouTube"],["vimeo","Vimeo"],["cloudflare","Cloudflare Stream"],["wistia","Wistia"],["mux","Mux"]]){
+     const o=document.createElement("option");o.value=id;o.textContent=label;provider.append(o);
+   }
+   link.textContent="Save Video";
    link.onclick=async()=>{
-    const value=prompt("Enter VdoCipher Video ID for: "+lecture.title+"\nLeave blank to remove existing mapping. Never paste API secret.");
-    if(value===null)return;
-    const videoId=value.trim();
-    if(videoId&&!/^[A-Za-z0-9_-]{8,64}$/.test(videoId))return msg("videoMsg","Invalid video ID format.");
-    if(!videoId&&!confirm("Remove video mapping for this lecture?"))return;
-    link.disabled=true;
-    try{
-     await videoApi("POST",{lectureId:lecture.id,videoId});
-     if(videoId)linkedVideoIds.add(lecture.id);else linkedVideoIds.delete(lecture.id);
-     msg("videoMsg","Video mapping saved securely for "+lecture.title);
-     renderVideoList();
-    }catch(e){msg("videoMsg","Could not save video: "+e.message);link.disabled=false}
+     const selected=provider.value;
+     const videoId=prompt("Enter "+selected+" Video ID for: "+lecture.title+"\\nLeave blank to remove mapping. Do NOT enter API keys.");
+     if(videoId===null)return;
+     const value=videoId.trim();
+     if(value&&!/^[A-Za-z0-9_-]{6,128}$/.test(value))return msg("videoMsg","Invalid video ID.");
+     if(!value&&!confirm("Remove video mapping?"))return;
+     let libraryId="",customerCode="";
+     if(value&&selected==="bunny"){libraryId=prompt("Bunny Stream numeric Video Library ID:")||"";if(!/^[0-9]{1,12}$/.test(libraryId))return msg("videoMsg","Invalid Bunny library ID.")}
+     if(value&&selected==="cloudflare"){customerCode=prompt("Cloudflare Stream customer code (without customer- prefix):")||"";if(!/^[A-Za-z0-9_-]{5,100}$/.test(customerCode))return msg("videoMsg","Invalid Cloudflare customer code.")}
+     link.disabled=true;
+     try{
+       await videoApi("POST",{lectureId:lecture.id,provider:selected,videoId:value,libraryId,customerCode});
+       if(value)linkedVideoIds.add(lecture.id);else linkedVideoIds.delete(lecture.id);
+       msg("videoMsg","Video saved for "+lecture.title+" ("+selected+").");renderVideoList();
+     }catch(e){msg("videoMsg","Could not save video: "+e.message);link.disabled=false}
    };
-   row.append(name,status,link);section.append(row);
+   row.append(name,status,provider,link);section.append(row);
   });
   root.append(section);
  });
