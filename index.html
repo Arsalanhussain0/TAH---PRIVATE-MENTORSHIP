@@ -775,24 +775,33 @@
         const result = await response.json().catch(()=>({}));
         if (requestNumber !== playbackRequestNumber || approvedUid !== user.uid ||
             auth.currentUser?.uid !== user.uid || videoPlayerScreen.classList.contains("hidden")) return;
-        if (!response.ok || !result.otp || !result.playbackInfo) {
+        if (!response.ok || (result.provider==="vdocipher" ? (!result.otp||!result.playbackInfo) : !result.embedUrl)) {
           const messages = {
             video_not_uploaded:"This lecture video has not been uploaded yet.",
-            video_service_not_configured:"Secure video service is not activated yet.",
+            video_service_not_configured:"This video service is not activated yet.",
             lecture_locked:"This lecture is currently locked.",
             device_not_authorized:"This browser is not the registered device. Contact admin.",
             student_not_approved:"Your mentorship access is not active.",
             playback_unavailable:"Video is temporarily unavailable. Please try again.",
-            video_provider_unavailable:"Video provider is temporarily unavailable."
+            video_provider_unavailable:"Video provider is temporarily unavailable.",
+            unsupported_video_provider:"Unsupported video provider."
           };
-          status.textContent = messages[result.error] || "Secure video unavailable. Please try again later.";
+          status.textContent = messages[result.error] || "Video unavailable. Please try again later.";
           return;
         }
         const iframe = document.createElement("iframe");
-        const url = new URL("https://player.vdocipher.com/v2/");
-        url.searchParams.set("otp",result.otp);
-        url.searchParams.set("playbackInfo",result.playbackInfo);
-        iframe.src = url.toString();
+        let url;
+        if(result.provider==="vdocipher"){
+          url=new URL("https://player.vdocipher.com/v2/");
+          url.searchParams.set("otp",result.otp);
+          url.searchParams.set("playbackInfo",result.playbackInfo);
+        }else{
+          url=new URL(result.embedUrl);
+          const allowed=["player.mediadelivery.net","www.youtube-nocookie.com","player.vimeo.com","fast.wistia.net","player.mux.com"];
+          if(!allowed.includes(url.hostname)&&!/^customer-[a-zA-Z0-9_-]+\\.cloudflarestream\\.com$/.test(url.hostname))throw Error("Untrusted video provider");
+          if(url.protocol!=="https:")throw Error("Invalid video protocol");
+        }
+        iframe.src=url.toString();
         iframe.title = title;
         iframe.referrerPolicy = "strict-origin-when-cross-origin";
         iframe.allow = "encrypted-media; autoplay; fullscreen; picture-in-picture";
