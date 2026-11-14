@@ -798,7 +798,7 @@
         }else{
           url=new URL(result.embedUrl);
           const allowed=["player.mediadelivery.net","www.youtube-nocookie.com","player.vimeo.com","fast.wistia.net","player.mux.com"];
-          if(!allowed.includes(url.hostname)&&!/^customer-[a-zA-Z0-9_-]+\\.cloudflarestream\\.com$/.test(url.hostname))throw Error("Untrusted video provider");
+          if(!allowed.includes(url.hostname)&&!/^customer-[a-zA-Z0-9_-]+\.cloudflarestream\.com$/.test(url.hostname))throw Error("Untrusted video provider");
           if(url.protocol!=="https:")throw Error("Invalid video protocol");
         }
         iframe.src=url.toString();
