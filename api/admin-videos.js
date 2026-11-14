@@ -25,15 +25,22 @@ module.exports=async(req,res)=>{
    // Admin only: return status, not secret IDs, until an edit is requested.
    return send(res,200,{videos:Object.keys(snap.data()?.videos||{})});
   }
-  const {lectureId,videoId}=req.body||{};
+  const {lectureId,videoId,provider="vdocipher",libraryId="",customerCode=""}=req.body||{};
   if(typeof lectureId!=="string"||!/^[a-f0-9-]{36}$/.test(lectureId))
    return send(res,400,{error:"invalid_lecture_id"});
-  if(typeof videoId!=="string"||(videoId!==""&&!/^[A-Za-z0-9_-]{8,64}$/.test(videoId)))
+  if(typeof videoId!=="string"||videoId.length>128)
    return send(res,400,{error:"invalid_video_id"});
+  const providers=["vdocipher","bunny","youtube","vimeo","cloudflare","wistia","mux"];
+  if(!providers.includes(provider))return send(res,400,{error:"invalid_provider"});
+  if(videoId&&!/^[A-Za-z0-9_-]{6,128}$/.test(videoId))return send(res,400,{error:"invalid_video_id"});
+  if(videoId&&provider==="bunny"&&!/^[0-9]{1,12}$/.test(String(libraryId)))return send(res,400,{error:"invalid_bunny_library_id"});
+  if(videoId&&provider==="cloudflare"&&!/^[A-Za-z0-9_-]{5,100}$/.test(customerCode))return send(res,400,{error:"invalid_cloudflare_customer_code"});
+  if(videoId&&provider==="vimeo"&&!/^[0-9]{6,20}$/.test(videoId))return send(res,400,{error:"invalid_vimeo_id"});
+  if(videoId&&provider==="youtube"&&!/^[A-Za-z0-9_-]{11}$/.test(videoId))return send(res,400,{error:"invalid_youtube_id"});
   const catalog=await db.doc("courseCatalog/batch1").get();
   const found=(catalog.data()?.modules||[]).some(m=>(m.lectures||[]).some(l=>l.id===lectureId));
   if(!found)return send(res,404,{error:"lecture_not_found"});
-  if(videoId)await ref.set({videos:{[lectureId]:videoId}},{merge:true});
+  if(videoId)await ref.set({videos:{[lectureId]:{provider,videoId,...(provider==="bunny"?{libraryId:String(libraryId)}:{}),...(provider==="cloudflare"?{customerCode}: {})}}},{merge:true});
   else await ref.update({["videos."+lectureId]:admin.firestore.FieldValue.delete()}).catch(e=>{if(e.code!==5)throw e});
   return send(res,200,{ok:true,linked:!!videoId});
  }catch(e){console.error("video admin error",e?.message);return send(res,500,{error:"video_management_failed"})}
