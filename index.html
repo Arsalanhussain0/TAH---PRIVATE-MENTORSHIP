@@ -585,6 +585,8 @@ body.tah-video-fullscreen .video-wrapper.css-fullscreen {
         if (serial === deviceCheckSerial && auth.currentUser?.uid === user.uid) {
           const msg = e.message === "other_device"
             ? "This account is already registered on another browser/device. Contact admin to reset device."
+            : e.message === "device_service_not_configured"
+            ? "This preview cannot verify student devices. Use the live TAH portal to sign in."
             : e.message === "not_approved"
             ? "Your mentorship access is not approved or has been disabled."
             : "Secure device verification unavailable. Please try again later.";
@@ -784,7 +786,14 @@ document.getElementById("tah-nav-continue").addEventListener("click",()=>{if(!ap
           document.getElementById("password-input").value);
         document.getElementById("password-input").value = "";
       } catch (err) {
-        error.textContent = "Login failed. Check your email and password.";
+        const messages = {
+          "auth/invalid-credential": "Firebase rejected the email or password.",
+          "auth/invalid-email": "Enter a valid email address.",
+          "auth/too-many-requests": "Too many sign-in attempts. Wait before trying again.",
+          "auth/network-request-failed": "Could not connect to Firebase. Check your connection."
+        };
+        const code = typeof err?.code === "string" && /^auth\/[a-z0-9-]+$/.test(err.code) ? err.code : "";
+        error.textContent = (messages[code] || "Firebase sign-in could not be completed.") + (code ? " (" + code + ")" : "");
         error.style.display = "block";
       } finally {
         button.disabled = false;
