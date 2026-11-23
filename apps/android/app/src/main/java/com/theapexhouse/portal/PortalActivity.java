@@ -10,7 +10,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 public final class PortalActivity extends Activity {
-    private static final String HOST = "tah-private-mentorship-git-fe-446289-arsalans-projects-583e344d.vercel.app";
+    private static final String HOST = "tah-private-mentorship.vercel.app";
     private WebView portal;
 
     @Override public void onCreate(Bundle state) {

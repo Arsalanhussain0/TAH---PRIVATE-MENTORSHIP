@@ -3,24 +3,24 @@ android {
     namespace 'com.theapexhouse.portal'
     compileSdk 35
     defaultConfig {
-        applicationId 'com.theapexhouse.preview'
+        applicationId 'com.theapexhouse.portal'
         minSdk 26
         targetSdk 34
         versionCode 1
-        versionName '1.0-preview'
+        versionName '1.0'
     }
     flavorDimensions 'portal'
     productFlavors {
         student {
             dimension 'portal'
             applicationIdSuffix '.student'
-            resValue 'string', 'app_name', 'TAH Student Preview'
+            resValue 'string', 'app_name', 'TAH Student Live'
             resValue 'string', 'portal_path', '/'
         }
         admin {
             dimension 'portal'
             applicationIdSuffix '.admin'
-            resValue 'string', 'app_name', 'TAH Admin Preview'
+            resValue 'string', 'app_name', 'TAH Admin Live'
             resValue 'string', 'portal_path', '/admin/'
         }
     }

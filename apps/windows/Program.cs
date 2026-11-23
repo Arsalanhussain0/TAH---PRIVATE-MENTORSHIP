@@ -9,16 +9,16 @@ static class Program
     {
         ApplicationConfiguration.Initialize();
 #if TAH_ADMIN
-        Application.Run(new Portal("TAH Admin Preview", "/admin/", "Admin"));
+        Application.Run(new Portal("TAH Admin Live", "/admin/", "Admin"));
 #else
-        Application.Run(new Portal("TAH Student Preview", "/", "Student"));
+        Application.Run(new Portal("TAH Student Live", "/", "Student"));
 #endif
     }
 }
 
 sealed class Portal : Form
 {
-    const string Host = "tah-private-mentorship-git-fe-446289-arsalans-projects-583e344d.vercel.app";
+    const string Host = "tah-private-mentorship.vercel.app";
 
     [DllImport("user32.dll", SetLastError = true)]
     static extern bool SetWindowDisplayAffinity(IntPtr window, uint affinity);
@@ -37,7 +37,7 @@ sealed class Portal : Form
             try
             {
                 var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "The Apex House", "Preview", profile);
+                    "The Apex House", "Live", profile);
                 await web.EnsureCoreWebView2Async(await CoreWebView2Environment.CreateAsync(userDataFolder: folder));
                 var core = web.CoreWebView2;
                 core.Settings.AreDevToolsEnabled = false;
