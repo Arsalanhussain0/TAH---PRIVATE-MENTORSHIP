@@ -5,6 +5,8 @@ on:
     paths: ['apps/**', '.github/workflows/tah-preview-apps.yml']
 permissions:
   contents: read
+env:
+  TAH_WINDOWS_VERSION: "1.1.0"
 jobs:
   android:
     runs-on: ubuntu-latest
@@ -54,11 +56,33 @@ jobs:
           $publish = Join-Path $env:RUNNER_TEMP "publish"
           $output = Join-Path $env:GITHUB_WORKSPACE "output"
           $define = if ($env:PORTAL -eq 'Admin') { 'TAH_ADMIN' } else { 'TAH_STUDENT' }
-          dotnet publish apps/windows/TAH.csproj -c Release -r win-x64 --self-contained true -o $publish "-p:DefineConstants=$define"
+          dotnet publish apps/windows/TAH.csproj -c Release -r win-x64 --self-contained true -o $publish "-p:DefineConstants=$define" "-p:Version=$env:TAH_WINDOWS_VERSION"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
           if (!(Test-Path $iscc)) { choco install innosetup --yes --no-progress }
-          & $iscc "/DPortal=$env:PORTAL" "/DPublish=$publish" "/DOutput=$output" "/DIcon=$env:GITHUB_WORKSPACE\apps\windows\TAH.ico" apps/windows/setup.iss
+          & $iscc "/DPortal=$env:PORTAL" "/DVersion=$env:TAH_WINDOWS_VERSION" "/DPublish=$publish" "/DOutput=$output" "/DIcon=$env:GITHUB_WORKSPACE\apps\windows\TAH.ico" apps/windows/setup.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
         with: {name: 'TAH-${{ matrix.portal }}-Windows-Live', path: 'output/*.exe', if-no-files-found: error}
+
+  publish-windows:
+    needs: windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency: tah-windows-release
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: 'TAH-*-Windows-Live'
+          path: release
+          merge-multiple: true
+      - name: Publish versioned Windows installers
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          tag="tah-windows-v${TAH_WINDOWS_VERSION}"
+          if gh release view "$tag" >/dev/null 2>&1; then exit 0; fi
+          gh release create "$tag" release/TAH-Student-Windows-Live-Setup.exe release/TAH-Admin-Windows-Live-Setup.exe --target "$RELEASE_COMMIT" --latest --title "TAH Windows ${TAH_WINDOWS_VERSION}" --notes "Student and Admin installers. Version 1.1.0 adds verified update checks."

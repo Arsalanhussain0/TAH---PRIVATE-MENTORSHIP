@@ -3,7 +3,9 @@ SetupIconFile={#Icon}
 UninstallDisplayIcon={app}\TAH.exe
 AppId=TAH-{#Portal}-Live
 AppName=TAH {#Portal} Live
-AppVersion=1.0
+AppVersion={#Version}
+CloseApplications=yes
+RestartApplications=no
 DefaultDirName={localappdata}\TAH\{#Portal}
 PrivilegesRequired=lowest
 OutputDir={#Output}
@@ -15,4 +17,4 @@ Source: "{#Publish}\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
 [Icons]
 Name: "{autoprograms}\TAH {#Portal} Live"; Filename: "{app}\TAH.exe"
 [Run]
-Filename: "{app}\TAH.exe"; Description: "Open TAH {#Portal} Live"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\TAH.exe"; Description: "Open TAH {#Portal} Live"; Flags: nowait postinstall

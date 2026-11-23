@@ -33,6 +33,7 @@ sealed class Portal : Form
         Controls.Add(web);
         Shown += async (_, _) =>
         {
+            _ = PortalUpdates.CheckAsync(this, profile);
             if (!SetWindowDisplayAffinity(Handle, 0x11))
                 Text = title + " (capture protection unavailable)";
             try
