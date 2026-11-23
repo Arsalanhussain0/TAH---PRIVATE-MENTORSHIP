@@ -145,6 +145,72 @@ async function deleteStudent(uid,name,button){
  }catch(e){msg("listMsg","Student removal failed: "+e.message+". If incomplete, account is suspended; contact admin support.")}
  finally{button.disabled=false}
 }
+function openLectureAccess(uid) {
+  const student = students.find(entry => entry.uid === uid);
+  if (!student || !adminUid || !auth.currentUser) return;
+  const dialog = document.createElement("dialog");
+  dialog.style.cssText = "width:min(640px,94vw);max-height:85dvh;overflow:auto;background:#0b1325;color:#fff;border:1px solid #334b72;border-radius:16px;padding:18px";
+  const heading = document.createElement("h2");
+  heading.textContent = "Lecture access for " + (student.name || "student");
+  const help = document.createElement("p");
+  help.textContent = "Follow course uses the global setting. Allow and Deny override it for this student.";
+  const close = document.createElement("button");
+  close.textContent = "Close";
+  close.onclick = () => dialog.close();
+  const status = document.createElement("p");
+  status.setAttribute("role", "status");
+  dialog.append(heading, help, close, status);
+  for (const node of catalog?.modules || []) {
+    const group = document.createElement("h3");
+    group.textContent = node.title;
+    dialog.append(group);
+    for (const lecture of node.lectures || []) {
+      const label = document.createElement("label");
+      label.style.cssText = "display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:10px 0";
+      label.append(document.createTextNode(lecture.title));
+      const select = document.createElement("select");
+      for (const [value, text] of [["default", "Follow course"], ["allow", "Allow"], ["deny", "Deny"]]) {
+        select.add(new Option(text, value));
+      }
+      const override = student.lectureAccess?.[lecture.id];
+      let current = override === true ? "allow" : override === false ? "deny" : "default";
+      select.value = current;
+      select.disabled = !lecture.id;
+      if (!lecture.id) select.title = "Assign a stable lecture ID in the course editor first.";
+      select.onchange = async () => {
+        select.disabled = true;
+        status.textContent = "Saving lecture access…";
+        const requested = select.value;
+        try {
+          const token = await auth.currentUser.getIdToken();
+          const response = await fetch("/api/student-lecture-access", {
+            method: "POST",
+            headers: {Authorization: "Bearer " + token, "Content-Type": "application/json"},
+            body: JSON.stringify({uid, lectureId: lecture.id, mode: requested})
+          });
+          if (!response.ok) {
+            const result = await response.json().catch(() => ({}));
+            throw new Error(result.error === "preview_is_read_only"
+              ? "Preview cannot change live student access." : "Could not save lecture access.");
+          }
+          current = requested;
+          status.textContent = "Lecture access saved.";
+        } catch (error) {
+          select.value = current;
+          status.textContent = error.message === "Preview cannot change live student access."
+            ? error.message : "Could not save lecture access.";
+        } finally {
+          select.disabled = false;
+        }
+      };
+      label.append(select);
+      dialog.append(label);
+    }
+  }
+  dialog.addEventListener("close", () => dialog.remove(), {once: true});
+  document.body.append(dialog);
+  dialog.showModal();
+}
 function render(){const q=$("search").value.toLowerCase();$("total").textContent=students.length;$("active").textContent=students.filter(s=>s.active===true).length;const root=$("students");root.replaceChildren();for(const s of students.filter(s=>(s.name||"").toLowerCase().includes(q)||s.uid.toLowerCase().includes(q))){const item=document.createElement("div");item.className="student";const top=document.createElement("div");top.className="row spread";const name=document.createElement("strong");name.textContent=s.name||"Unnamed student";const badge=document.createElement("span");badge.className="pill "+(s.active===true?"on":"off");badge.textContent=s.active===true?"Active":"Suspended";top.append(name,badge);const uid=document.createElement("p");uid.className="muted small";uid.textContent="UID: "+s.uid;const controls=document.createElement("div");controls.className="row";const toggle=document.createElement("button");toggle.className=s.active===true?"danger":"success";toggle.textContent=s.active===true?"Suspend Access":"Activate Access";toggle.onclick=async()=>{if(!confirm((s.active===true?"Suspend":"Activate")+" this student?"))return;toggle.disabled=true;try{await updateDoc(doc(db,"Students",s.uid),{active:s.active!==true});msg("listMsg","Access updated.")}catch(e){msg("listMsg","Update failed: "+e.code)}finally{toggle.disabled=false}};const rename=document.createElement("button");rename.className="secondary";rename.textContent="Rename";rename.onclick=async()=>{const newName=prompt("Student name:",s.name||"");if(newName===null||!newName.trim())return;try{await updateDoc(doc(db,"Students",s.uid),{name:newName.trim().slice(0,100)});msg("listMsg","Name updated.")}catch(e){msg("listMsg","Update failed: "+e.code)}};const device=document.createElement("span");
 device.className="muted small";
 device.textContent=s.deviceBinding?"Device: Registered":"Device: Not registered";
@@ -163,7 +229,11 @@ passwordReset.className="secondary";
 passwordReset.textContent="Reset Password";
 passwordReset.title="Send a Firebase password reset email to this student";
 passwordReset.onclick=()=>sendStudentPasswordReset(s.uid,s.name||s.uid,passwordReset);
-controls.append(toggle,rename,reset,passwordReset,remove);
+const access = document.createElement("button");
+access.className = "secondary";
+access.textContent = "Lecture Access";
+access.onclick = () => openLectureAccess(s.uid);
+controls.append(toggle,rename,reset,passwordReset,access,remove);
 item.append(top,uid,device,controls);root.append(item)}if(!root.children.length){const empty=document.createElement("p");empty.className="muted";empty.textContent="No matching students.";root.append(empty)}}
 $("search").addEventListener("input",render);
 $("courseSearch").addEventListener("input",renderCourses);
