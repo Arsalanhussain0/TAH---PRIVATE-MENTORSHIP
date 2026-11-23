@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="TAH Portal">
   <link rel="apple-touch-icon" href="/icon-192.png">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Trader Arsalan Hussain | Student Portal</title>
   <style>
     * {
@@ -314,6 +314,37 @@ body::before{display:none!important}
 button{transition:background-color 140ms ease-out,transform 140ms ease-out!important}
 @media(max-width:850px),(hover:none){#neon-canvas{display:none!important}.list-item:hover{transform:none!important}.container{animation:none!important}}
 @media(prefers-reduced-motion:reduce){#neon-canvas{display:none!important}.container{animation:none!important}.list-item,button{transition:none!important}}
+html.tah-video-fullscreen, body.tah-video-fullscreen { overflow: hidden; }
+body.tah-video-fullscreen .tah-nav { visibility: hidden; }
+body.tah-video-fullscreen .video-wrapper.css-fullscreen {
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  height: 100dvh !important;
+  background: #000;
+  margin: 0;
+  overflow: hidden;
+  transform: none;
+}
+.video-wrapper.css-fullscreen .custom-fs-btn {
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  right: calc(12px + env(safe-area-inset-right, 0px));
+  bottom: auto;
+  min-height: 44px;
+  z-index: 40;
+  pointer-events: auto;
+}
+#watermark-overlay {
+  max-width: 55%;
+  overflow-wrap: anywhere;
+  opacity: .75;
+  text-align: center;
+  background: rgba(0,0,0,.4);
+  padding: 4px 8px;
+  border-radius: 5px;
+}
+#watermark-overlay span { display: block; }
+#watermark-overlay span + span { font-size: .85em; }
 </style>
 </head>
 <body>
@@ -569,6 +600,7 @@ button{transition:background-color 140ms ease-out,transform 140ms ease-out!impor
       }
     }, 60000);
     let currentUserEmail = "";
+    let currentStudentName = "";
     let activeModuleIndex = 0;
 
     const loginForm = document.getElementById('login-form');
@@ -603,6 +635,7 @@ button{transition:background-color 140ms ease-out,transform 140ms ease-out!impor
       deviceCheckSerial++;
       approvedUid = null;
       currentUserEmail = "";
+      currentStudentName = "";
       iframeContainer.innerHTML = "";
       showScreen(loginScreen);
       if (!user) return;
@@ -612,6 +645,7 @@ button{transition:background-color 140ms ease-out,transform 140ms ease-out!impor
         if (!snapshot.exists() || record.active !== true || record.role !== "student") {
           approvedUid = null;
           currentUserEmail = "";
+      currentStudentName = "";
           if (unsubscribeCourses) { unsubscribeCourses(); unsubscribeCourses = null; }
           iframeContainer.replaceChildren();
           showScreen(loginScreen);
@@ -667,6 +701,7 @@ button{transition:background-color 140ms ease-out,transform 140ms ease-out!impor
           });
         }
         currentUserEmail = user.email || "";
+        currentStudentName = String(record.name || user.displayName || "TAH Student").trim() || "TAH Student";
         document.getElementById("user-display").textContent = currentUserEmail;
         document.getElementById("error-msg").style.display = "none";
         if (loginScreen.classList.contains("hidden") === false) showScreen(coursesScreen);
@@ -839,7 +874,7 @@ document.getElementById("tah-nav-continue").addEventListener("click",()=>{if(!ap
       currentPlayingTitle.textContent = title;
       playingLecture = lecture;
       showScreen(videoPlayerScreen);
-      startPreviewWatermark(currentUserEmail || auth.currentUser?.email || "TAH Student");
+      startPreviewWatermark(currentStudentName, currentUserEmail || auth.currentUser?.email || "");
       iframeContainer.replaceChildren();
       const status = document.createElement("p");
       status.style.cssText = "position:absolute;inset:0;display:grid;place-items:center;padding:22px;text-align:center;color:#cbd5e1";
@@ -910,14 +945,32 @@ document.getElementById("tah-nav-continue").addEventListener("click",()=>{if(!ap
       showScreen(lecturesListScreen);
     }
 
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && videoWrapperBox.classList.contains("css-fullscreen")) toggleCustomFullscreen();
+    });
+
     function toggleCustomFullscreen() {
       if (!videoWrapperBox.classList.contains('css-fullscreen')) {
+        if (typeof videoWrapperBox.showPopover === "function") {
+          videoWrapperBox.setAttribute("popover", "manual");
+          videoWrapperBox.showPopover();
+        }
+        document.documentElement.classList.add("tah-video-fullscreen");
+        document.body.classList.add("tah-video-fullscreen");
         videoWrapperBox.classList.add('css-fullscreen');
+        fsToggleBtn.focus({preventScroll: true});
         fsToggleBtn.innerText = "✕ Exit Fullscreen";
         backToLecBtn.style.display = "none";
         currentPlayingTitle.style.display = "none";
       } else {
         videoWrapperBox.classList.remove('css-fullscreen');
+        if (videoWrapperBox.hasAttribute("popover")) {
+          videoWrapperBox.hidePopover();
+          videoWrapperBox.removeAttribute("popover");
+        }
+        document.documentElement.classList.remove("tah-video-fullscreen");
+        document.body.classList.remove("tah-video-fullscreen");
+        fsToggleBtn.focus({preventScroll: true});
         fsToggleBtn.innerText = "⛶ Fullscreen";
         backToLecBtn.style.display = "block";
         currentPlayingTitle.style.display = "block";
@@ -929,13 +982,16 @@ document.getElementById("tah-nav-continue").addEventListener("click",()=>{if(!ap
       previewWatermarkTimer = null;
       watermarkOverlay.textContent = "";
     }
-    function startPreviewWatermark(email) {
+    function startPreviewWatermark(name, email) {
       stopPreviewWatermark();
-      watermarkOverlay.textContent = email + " • TAH PRIVATE MENTORSHIP";
-      watermarkOverlay.style.cssText += ";max-width:70%;overflow-wrap:anywhere;opacity:.68;text-align:center;background:rgba(0,0,0,.25);padding:4px 8px;border-radius:5px;";
+      const nameLine = document.createElement("span");
+      const emailLine = document.createElement("span");
+      nameLine.textContent = name || "TAH Student";
+      emailLine.textContent = email;
+      watermarkOverlay.replaceChildren(nameLine, emailLine);
       const move = () => {
-        watermarkOverlay.style.top = (12 + Math.random() * 65) + "%";
-        watermarkOverlay.style.left = (5 + Math.random() * 35) + "%";
+        watermarkOverlay.style.top = (15 + Math.random() * 52) + "%";
+        watermarkOverlay.style.left = (5 + Math.random() * 32) + "%";
       };
       move();
       previewWatermarkTimer = setInterval(move, 3200);
