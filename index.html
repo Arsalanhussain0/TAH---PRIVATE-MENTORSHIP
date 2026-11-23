@@ -428,7 +428,8 @@ body.tah-video-fullscreen .video-wrapper.css-fullscreen {
   </div>
 
 </main></div>
-  <script type="module">
+  <script src="/lecture-access.js"></script>
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
@@ -437,6 +438,8 @@ body.tah-video-fullscreen .video-wrapper.css-fullscreen {
     const db = getFirestore(app);
     let unsubscribeStudent = null;
     let unsubscribeCourses = null;
+    let lectureAccess = {};
+    let playingLecture = null;
     let approvedUid = null;
     // Register the updated Service Worker normally.
     // updateViaCache:'none' asks the browser to revalidate sw.js instead of
@@ -582,6 +585,8 @@ body.tah-video-fullscreen .video-wrapper.css-fullscreen {
         if (serial === deviceCheckSerial && auth.currentUser?.uid === user.uid) {
           const msg = e.message === "other_device"
             ? "This account is already registered on another browser/device. Contact admin to reset device."
+            : e.message === "device_service_not_configured"
+            ? "This preview cannot verify student devices. Use the live TAH portal to sign in."
             : e.message === "not_approved"
             ? "Your mentorship access is not approved or has been disabled."
             : "Secure device verification unavailable. Please try again later.";
@@ -642,7 +647,7 @@ body.tah-video-fullscreen .video-wrapper.css-fullscreen {
         if (!snapshot.exists() || record.active !== true || record.role !== "student") {
           approvedUid = null;
           currentUserEmail = "";
-          currentStudentName = "";
+      currentStudentName = "";
           if (unsubscribeCourses) { unsubscribeCourses(); unsubscribeCourses = null; }
           iframeContainer.replaceChildren();
           showScreen(loginScreen);
@@ -665,6 +670,10 @@ body.tah-video-fullscreen .video-wrapper.css-fullscreen {
         }
         if (auth.currentUser?.uid !== user.uid || approvedUid === null && deviceCheckInProgress) return;
         approvedUid = user.uid;
+        lectureAccess = record.lectureAccess || {};
+        if (playingLecture && !isReleased(playingLecture)) showScreen(lecturesListScreen);
+        tahRefreshStats();
+        if (!lecturesListScreen.classList.contains("hidden") && batch1Nodes[activeModuleIndex]) openLecturesList(activeModuleIndex);
         if (!unsubscribeCourses) {
           unsubscribeCourses = onSnapshot(doc(db, "courseCatalog", "batch1"), (courseSnapshot) => {
             if (auth.currentUser?.uid !== user.uid || approvedUid !== user.uid) return;
@@ -725,6 +734,7 @@ document.getElementById("tah-nav-continue").addEventListener("click",()=>{if(!ap
       tahShell.classList.toggle('hidden',!academy);
       if(academy){tahHeading.textContent=screenToShow===coursesScreen?"Command Center":screenToShow===chaptersScreen?"Course Modules":screenToShow===lecturesListScreen?"Lecture Library":"Learning Theater";for(const [id,active] of [["tah-nav-home",screenToShow===coursesScreen],["tah-nav-courses",screenToShow===chaptersScreen],["tah-nav-continue",screenToShow===lecturesListScreen||screenToShow===videoPlayerScreen]]){const el=document.getElementById(id);if(active)el.setAttribute("aria-current","page");else el.removeAttribute("aria-current")}tahRefreshStats()}
       if (screenToShow !== videoPlayerScreen) {
+        playingLecture = null;
         playbackRequestNumber++;
         stopPreviewWatermark();
         iframeContainer.innerHTML = "";
@@ -776,7 +786,14 @@ document.getElementById("tah-nav-continue").addEventListener("click",()=>{if(!ap
           document.getElementById("password-input").value);
         document.getElementById("password-input").value = "";
       } catch (err) {
-        error.textContent = "Login failed. Check your email and password.";
+        const messages = {
+          "auth/invalid-credential": "Firebase rejected the email or password.",
+          "auth/invalid-email": "Enter a valid email address.",
+          "auth/too-many-requests": "Too many sign-in attempts. Wait before trying again.",
+          "auth/network-request-failed": "Could not connect to Firebase. Check your connection."
+        };
+        const code = typeof err?.code === "string" && /^auth\/[a-z0-9-]+$/.test(err.code) ? err.code : "";
+        error.textContent = (messages[code] || "Firebase sign-in could not be completed.") + (code ? " (" + code + ")" : "");
         error.style.display = "block";
       } finally {
         button.disabled = false;
@@ -821,10 +838,10 @@ document.getElementById("tah-nav-continue").addEventListener("click",()=>{if(!ap
     }
 
     function isReleased(lec) {
-      return lec.releaseMode === "unlocked";
+      return window.tahCanWatchLecture(lec, lectureAccess);
     }
     function releaseLabel(lec) {
-      return lec.releaseMode === "unlocked" ? "Watch" : "Locked";
+      return isReleased(lec) ? "Watch" : "Locked";
     }
     function openLecturesList(nodeIndex) {
       if (!approvedUid || auth.currentUser?.uid !== approvedUid) return;
@@ -864,6 +881,7 @@ document.getElementById("tah-nav-continue").addEventListener("click",()=>{if(!ap
       if (!lecture || !isReleased(lecture)) return;
       const requestNumber = ++playbackRequestNumber;
       currentPlayingTitle.textContent = title;
+      playingLecture = lecture;
       showScreen(videoPlayerScreen);
       startPreviewWatermark(currentStudentName, currentUserEmail || auth.currentUser?.email || "");
       iframeContainer.replaceChildren();
