@@ -18,6 +18,8 @@ jobs:
         with: {gradle-version: '8.9'}
       - run: |
           sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+          mkdir -p apps/android/app/src/main/res/drawable-nodpi
+          cp icon-512.png apps/android/app/src/main/res/drawable-nodpi/tah_logo.png
           gradle -p apps/android :app:assembleRelease
           keytool -genkeypair -keystore "$RUNNER_TEMP/tah-preview.p12" -storepass preview-only -keypass preview-only -alias tah-preview -keyalg RSA -keysize 2048 -validity 365 -dname "CN=TAH Live"
           mkdir -p output
@@ -45,6 +47,10 @@ jobs:
         env:
           PORTAL: ${{ matrix.portal }}
         run: |
+          python -m pip install Pillow
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -c "from PIL import Image; Image.open('icon-512.png').convert('RGBA').save('apps/windows/TAH.ico', sizes=[(16,16),(24,24),(32,32),(48,48),(64,64),(128,128),(256,256)])"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $publish = Join-Path $env:RUNNER_TEMP "publish"
           $output = Join-Path $env:GITHUB_WORKSPACE "output"
           $define = if ($env:PORTAL -eq 'Admin') { 'TAH_ADMIN' } else { 'TAH_STUDENT' }
@@ -52,7 +58,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
           if (!(Test-Path $iscc)) { choco install innosetup --yes --no-progress }
-          & $iscc "/DPortal=$env:PORTAL" "/DPublish=$publish" "/DOutput=$output" apps/windows/setup.iss
+          & $iscc "/DPortal=$env:PORTAL" "/DPublish=$publish" "/DOutput=$output" "/DIcon=$env:GITHUB_WORKSPACE\apps\windows\TAH.ico" apps/windows/setup.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
         with: {name: 'TAH-${{ matrix.portal }}-Windows-Live', path: 'output/*.exe', if-no-files-found: error}

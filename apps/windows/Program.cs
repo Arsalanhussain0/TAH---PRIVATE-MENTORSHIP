@@ -26,6 +26,7 @@ sealed class Portal : Form
     public Portal(string title, string path, string profile)
     {
         Text = title;
+        Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         Width = 1120;
         Height = 800;
         var web = new WebView2 { Dock = DockStyle.Fill };

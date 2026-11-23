@@ -1,4 +1,6 @@
 [Setup]
+SetupIconFile={#Icon}
+UninstallDisplayIcon={app}\TAH.exe
 AppId=TAH-{#Portal}-Live
 AppName=TAH {#Portal} Live
 AppVersion=1.0
