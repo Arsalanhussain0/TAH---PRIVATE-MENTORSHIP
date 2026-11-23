@@ -1,0 +1,27 @@
+plugins { id 'com.android.application' version '8.7.3' }
+android {
+    namespace 'com.theapexhouse.portal'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.theapexhouse.preview'
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName '1.0-preview'
+    }
+    flavorDimensions 'portal'
+    productFlavors {
+        student {
+            dimension 'portal'
+            applicationIdSuffix '.student'
+            resValue 'string', 'app_name', 'TAH Student Preview'
+            resValue 'string', 'portal_path', '/'
+        }
+        admin {
+            dimension 'portal'
+            applicationIdSuffix '.admin'
+            resValue 'string', 'app_name', 'TAH Admin Preview'
+            resValue 'string', 'portal_path', '/admin/'
+        }
+    }
+}

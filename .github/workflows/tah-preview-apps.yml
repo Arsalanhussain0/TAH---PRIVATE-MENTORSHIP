@@ -1,0 +1,72 @@
+name: TAH Preview Apps
+on:
+  push:
+    branches: [feature/tah-lecture-access]
+    paths: ['apps/**', '.github/workflows/tah-preview-apps.yml']
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: gradle/actions/setup-gradle@v4
+        with: {gradle-version: '8.9'}
+      - run: |
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+          gradle -p apps/android :app:assembleRelease
+          keytool -genkeypair -keystore "$RUNNER_TEMP/tah-preview.p12" -storepass preview-only -keypass preview-only -alias tah-preview -keyalg RSA -keysize 2048 -validity 365 -dname "CN=TAH Preview"
+          mkdir -p output
+          for flavor in student admin; do
+            filename="TAH-${flavor^}-Android-Preview.apk"
+            tools="$ANDROID_HOME/build-tools/35.0.0"
+            unsigned="apps/android/app/build/outputs/apk/$flavor/release/app-$flavor-release-unsigned.apk"
+            "$tools/zipalign" -P 16 -f 4 "$unsigned" "$RUNNER_TEMP/aligned.apk"
+            "$tools/apksigner" sign --ks "$RUNNER_TEMP/tah-preview.p12" --ks-pass pass:preview-only --out "output/$filename" "$RUNNER_TEMP/aligned.apk"
+            "$tools/apksigner" verify "output/$filename"
+          done
+      - uses: actions/upload-artifact@v4
+        with: {name: TAH-Android-Preview, path: 'output/*.apk', if-no-files-found: error}
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        portal: [Student, Admin]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: {dotnet-version: '8.0.x'}
+      - name: Build and package
+        shell: pwsh
+        env:
+          PORTAL: ${{ matrix.portal }}
+        run: |
+          $publish = Join-Path $env:RUNNER_TEMP "publish"
+          $output = Join-Path $env:GITHUB_WORKSPACE "output"
+          $define = if ($env:PORTAL -eq 'Admin') { 'TAH_ADMIN' } else { 'TAH_STUDENT' }
+          dotnet publish apps/windows/TAH.csproj -c Release -r win-x64 --self-contained true -o $publish "-p:DefineConstants=$define"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (!(Test-Path $iscc)) { choco install innosetup --yes --no-progress }
+          & $iscc "/DPortal=$env:PORTAL" "/DPublish=$publish" "/DOutput=$output" apps/windows/setup.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        with: {name: 'TAH-${{ matrix.portal }}-Windows-Preview', path: 'output/*.exe', if-no-files-found: error}
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile unsigned iPhone previews
+        run: |
+          brew install xcodegen
+          cd apps/ios
+          xcodegen generate
+          mkdir -p output
+          for portal in Student Admin; do
+            xcodebuild -project TAH.xcodeproj -scheme "TAH$portal" -configuration Release -sdk iphoneos -derivedDataPath "$RUNNER_TEMP/$portal" CODE_SIGNING_ALLOWED=NO build
+            ditto -c -k --keepParent "$RUNNER_TEMP/$portal/Build/Products/Release-iphoneos/TAH$portal.app" "output/TAH-$portal-iOS-Unsigned.zip"
+          done
+      - uses: actions/upload-artifact@v4
+        with: {name: TAH-iOS-Unsigned-Preview, path: 'apps/ios/output/*.zip', if-no-files-found: error}
