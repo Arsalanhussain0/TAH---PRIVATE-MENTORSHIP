@@ -1,9 +1,12 @@
 package com.theapexhouse.portal;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.WindowManager;
+import android.webkit.JsResult;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -25,6 +28,26 @@ public final class PortalActivity extends Activity {
         settings.setAllowContentAccess(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setSupportMultipleWindows(false);
+        portal.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onJsConfirm(WebView view, String url, String message, JsResult result) {
+                Uri origin = Uri.parse(url == null ? "" : url);
+                if (!"https".equals(origin.getScheme()) || !HOST.equals(origin.getHost())
+                        || isFinishing() || isDestroyed()) {
+                    result.cancel();
+                    return true;
+                }
+                AlertDialog dialog = new AlertDialog.Builder(PortalActivity.this)
+                        .setTitle(getString(R.string.app_name))
+                        .setMessage(message)
+                        .setPositiveButton(android.R.string.ok, (prompt, button) -> result.confirm())
+                        .setNegativeButton(android.R.string.cancel, (prompt, button) -> result.cancel())
+                        .setOnCancelListener(prompt -> result.cancel())
+                        .create();
+                dialog.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                dialog.show();
+                return true;
+            }
+        });
         portal.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 if (!request.isForMainFrame()) return false;
