@@ -11,8 +11,11 @@ static class PortalUpdates
     const string TagPrefix = "tah-windows-v";
     static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(3) };
 
-    public static async Task CheckAsync(Form window, string profile)
+    static int checking;
+
+    public static async Task CheckAsync(Form window, string profile, bool manual = false)
     {
+        if (Interlocked.Exchange(ref checking, 1) != 0) return;
         string? temporary = null;
         try
         {
@@ -28,7 +31,11 @@ static class PortalUpdates
             if (!tag.StartsWith(TagPrefix, StringComparison.Ordinal) ||
                 !Version.TryParse(tag[TagPrefix.Length..], out var available) ||
                 available <= Assembly.GetExecutingAssembly().GetName().Version ||
-                root.GetProperty("draft").GetBoolean() || root.GetProperty("prerelease").GetBoolean()) return;
+                root.GetProperty("draft").GetBoolean() || root.GetProperty("prerelease").GetBoolean())
+            {
+                if (manual && !window.IsDisposed) MessageBox.Show(window, "No newer TAH version is available.", "TAH update");
+                return;
+            }
 
             var name = $"TAH-{profile}-Windows-Live-Setup.exe";
             var asset = root.GetProperty("assets").EnumerateArray()
@@ -73,9 +80,11 @@ static class PortalUpdates
             or System.ComponentModel.Win32Exception or FormatException)
         {
             Debug.WriteLine(error.Message);
+            if (manual && !window.IsDisposed) MessageBox.Show(window, "Could not check for updates. Try again later.", "TAH update");
         }
         finally
         {
+            Interlocked.Exchange(ref checking, 0);
             if (temporary != null) try { File.Delete(temporary); } catch (IOException) { } catch (UnauthorizedAccessException) { }
         }
     }

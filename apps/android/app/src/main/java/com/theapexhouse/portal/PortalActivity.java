@@ -55,7 +55,16 @@ public final class PortalActivity extends Activity {
                 return !"https".equals(url.getScheme()) || !HOST.equals(url.getHost());
             }
         });
-        setContentView(portal);
+        PortalUpdates updates = new PortalUpdates(this);
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        android.widget.Button update = new android.widget.Button(this);
+        update.setText("Check for updates");
+        update.setOnClickListener(button -> updates.check(true));
+        layout.addView(update);
+        layout.addView(portal, new android.widget.LinearLayout.LayoutParams(-1, 0, 1));
+        setContentView(layout);
+        updates.check(false);
         portal.loadUrl("https://" + HOST + getString(R.string.portal_path));
     }
 

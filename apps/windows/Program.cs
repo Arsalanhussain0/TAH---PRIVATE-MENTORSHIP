@@ -31,6 +31,12 @@ sealed class Portal : Form
         Height = 800;
         var web = new WebView2 { Dock = DockStyle.Fill };
         Controls.Add(web);
+        var menu = new MenuStrip();
+        var updateItem = new ToolStripMenuItem("Check for updates");
+        updateItem.Click += async (_, _) => await PortalUpdates.CheckAsync(this, profile, true);
+        menu.Items.Add(updateItem);
+        Controls.Add(menu);
+        MainMenuStrip = menu;
         Shown += async (_, _) =>
         {
             _ = PortalUpdates.CheckAsync(this, profile);

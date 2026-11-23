@@ -6,7 +6,8 @@ on:
 permissions:
   contents: read
 env:
-  TAH_WINDOWS_VERSION: "1.1.0"
+  TAH_WINDOWS_VERSION: "1.2.0"
+  TAH_ANDROID_VERSION_CODE: "3"
 jobs:
   android:
     runs-on: ubuntu-latest
@@ -18,19 +19,30 @@ jobs:
         with: {packages: 'platform-tools'}
       - uses: gradle/actions/setup-gradle@v4
         with: {gradle-version: '8.9'}
-      - run: |
+      - env:
+          TAH_ANDROID_KEYSTORE_B64: ${{ secrets.TAH_ANDROID_KEYSTORE_B64 }}
+          TAH_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.TAH_ANDROID_KEYSTORE_PASSWORD }}
+        run: |
           sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
           mkdir -p apps/android/app/src/main/res/drawable-nodpi
           cp icon-512.png apps/android/app/src/main/res/drawable-nodpi/tah_logo.png
           gradle -p apps/android :app:assembleRelease
-          keytool -genkeypair -keystore "$RUNNER_TEMP/tah-preview.p12" -storepass preview-only -keypass preview-only -alias tah-preview -keyalg RSA -keysize 2048 -validity 365 -dname "CN=TAH Live"
+          if [[ -n "$TAH_ANDROID_KEYSTORE_B64" && -n "$TAH_ANDROID_KEYSTORE_PASSWORD" ]]; then
+            umask 077
+            printf '%s' "$TAH_ANDROID_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/tah-release.p12"
+            trap 'rm -f "$RUNNER_TEMP/tah-release.p12"' EXIT
+          fi
           mkdir -p output
           for flavor in student admin; do
             filename="TAH-${flavor^}-Android-Live.apk"
             tools="$ANDROID_HOME/build-tools/35.0.0"
             unsigned="apps/android/app/build/outputs/apk/$flavor/release/app-$flavor-release-unsigned.apk"
+            if [[ ! -f "$RUNNER_TEMP/tah-release.p12" ]]; then
+              cp "$unsigned" "output/${filename%.apk}-unsigned.apk"
+              continue
+            fi
             "$tools/zipalign" -P 16 -f 4 "$unsigned" "$RUNNER_TEMP/aligned.apk"
-            "$tools/apksigner" sign --ks "$RUNNER_TEMP/tah-preview.p12" --ks-pass pass:preview-only --out "output/$filename" "$RUNNER_TEMP/aligned.apk"
+            "$tools/apksigner" sign --ks "$RUNNER_TEMP/tah-release.p12" --ks-pass env:TAH_ANDROID_KEYSTORE_PASSWORD --ks-key-alias tah-release --out "output/$filename" "$RUNNER_TEMP/aligned.apk"
             "$tools/apksigner" verify "output/$filename"
           done
       - uses: actions/upload-artifact@v4
@@ -85,4 +97,29 @@ jobs:
         run: |
           tag="tah-windows-v${TAH_WINDOWS_VERSION}"
           if gh release view "$tag" >/dev/null 2>&1; then exit 0; fi
-          gh release create "$tag" release/TAH-Student-Windows-Live-Setup.exe release/TAH-Admin-Windows-Live-Setup.exe --target "$RELEASE_COMMIT" --latest --title "TAH Windows ${TAH_WINDOWS_VERSION}" --notes "Student and Admin installers. Version 1.1.0 adds verified update checks."
+          gh release create "$tag" release/TAH-Student-Windows-Live-Setup.exe release/TAH-Admin-Windows-Live-Setup.exe --target "$RELEASE_COMMIT" --latest --title "TAH Windows ${TAH_WINDOWS_VERSION}" --notes "Student and Admin installers. Includes verified update checks."
+
+  publish-android:
+    needs: android
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency: tah-android-release
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: TAH-Android-Live
+          path: release
+      - name: Publish signed APKs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          if [[ ! -f release/TAH-Student-Android-Live.apk || ! -f release/TAH-Admin-Android-Live.apk ]]; then
+            echo "Permanent signing secrets are required to publish APKs."
+            exit 0
+          fi
+          tag="tah-android-v${TAH_ANDROID_VERSION_CODE}"
+          if gh release view "$tag" >/dev/null 2>&1; then exit 0; fi
+          gh release create "$tag" release/TAH-Student-Android-Live.apk release/TAH-Admin-Android-Live.apk --target "$RELEASE_COMMIT" --latest=false --title "TAH Android build ${TAH_ANDROID_VERSION_CODE}" --notes "Signed Student and Admin APKs with in-app update checks."
